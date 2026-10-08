@@ -126,9 +126,19 @@
                         "type": "string",
                         "description": "Stable identifier for this metric result inside an evaluation run. Recommended deterministic join key for instance-level records."
                     },
-                    "evaluation_name": {
-                        "type": "string",
-                        "description": "Name of the evaluation"
+                    "evaluation_run_location": {
+                        "description": "Location of the evaluation run or its artifacts.",
+                        "oneOf": [
+                            {
+                                "$ref": "#/$defs/evaluation_run_url"
+                            },
+                            {
+                                "$ref": "#/$defs/evaluation_run_hf"
+                            },
+                            {
+                                "$ref": "#/$defs/evaluation_run_private"
+                            }
+                        ]
                     },
                     "source_data": {
                         "description": "Source of dataset for this evaluation: URL, HuggingFace dataset, or private/custom dataset.",
@@ -144,7 +154,7 @@
                             }
                         ]
                     },
-                    "evaluation_timestamp": {
+                    "evaluation_result_timestamp": {
                         "type": "string",
                         "description": "Timestamp for when the evaluations were run"
                     },
@@ -196,27 +206,8 @@
                                 "description": "Type of score",
                                 "enum": [
                                     "binary",
-                                    "continuous",
-                                    "levels"
+                                    "continuous"
                                 ]
-                            },
-                            "level_names": {
-                                "type": "array",
-                                "description": "Names of the score levels",
-                                "items": {
-                                    "type": "string"
-                                }
-                            },
-                            "level_metadata": {
-                                "type": "array",
-                                "description": "Additional Description for each Score Level",
-                                "items": {
-                                    "type": "string"
-                                }
-                            },
-                            "has_unknown_level": {
-                                "type": "boolean",
-                                "description": "Indicates whether there is an Unknown Level - if True, then a score of -1 will be treated as Unknown"
                             },
                             "min_score": {
                                 "oneOf": [
@@ -234,75 +225,7 @@
                                 ],
                                 "description": "Maximum possible score for a continuous metric. Use the string \"Infinity\" when unbounded above. Absence/null means not provided."
                             },
-                            "llm_scoring": {
-                                "type": "object",
-                                "description": "Configuration when LLM is used as scorer/judge",
-                                "required": [
-                                    "judges",
-                                    "input_prompt"
-                                ],
-                                "properties": {
-                                    "judges": {
-                                        "type": "array",
-                                        "description": "LLM judge(s) - single item for judge, multiple for jury",
-                                        "items": {
-                                            "$ref": "#/$defs/judge_config"
-                                        },
-                                        "minItems": 1
-                                    },
-                                    "input_prompt": {
-                                        "type": "string",
-                                        "description": "Prompt template used for judging"
-                                    },
-                                    "aggregation_method": {
-                                        "type": "string",
-                                        "enum": [
-                                            "majority_vote",
-                                            "average",
-                                            "weighted_average",
-                                            "median"
-                                        ],
-                                        "description": "How to aggregate scores when multiple judges"
-                                    },
-                                    "expert_baseline": {
-                                        "type": "number",
-                                        "description": "Expert/human baseline score for comparison"
-                                    },
-                                    "additional_details": {
-                                        "type": "object",
-                                        "description": "Additional parameters (key-value pairs, all values must be strings)",
-                                        "additionalProperties": {
-                                            "type": "string"
-                                        }
-                                    }
-                                }
-                            },
-                            "additional_details": {
-                                "type": "object",
-                                "description": "Additional parameters (key-value pairs, all values must be strings)",
-                                "additionalProperties": {
-                                    "type": "string"
-                                }
-                            }
-                        },
                         "if": {
-                            "required": [
-                                "score_type"
-                            ],
-                            "properties": {
-                                "score_type": {
-                                    "const": "levels"
-                                }
-                            }
-                        },
-                        "then": {
-                            "required": [
-                                "level_names",
-                                "has_unknown_level"
-                            ]
-                        },
-                        "else": {
-                            "if": {
                                 "required": [
                                     "score_type"
                                 ],
@@ -330,13 +253,6 @@
                             "score": {
                                 "type": "number",
                                 "description": "The score for the evaluation"
-                            },
-                            "details": {
-                                "type": "object",
-                                "description": "Additional parameters (key-value pairs, all values must be strings)",
-                                "additionalProperties": {
-                                    "type": "string"
-                                }
                             },
                             "uncertainty": {
                                 "type": "object",
@@ -386,25 +302,21 @@
                                             "lower",
                                             "upper"
                                         ]
-                                    },
-                                    "standard_deviation": {
-                                        "type": "number",
-                                        "description": "Standard deviation of the per-sample scores"
-                                    },
-                                    "num_samples": {
-                                        "type": "integer",
-                                        "description": "Number of samples used to compute the uncertainty estimates"
-                                    },
-                                    "num_bootstrap_samples": {
-                                        "type": "integer",
-                                        "description": "Number of bootstrap resamples used, if bootstrap method was applied"
                                     }
+                                }
+                            },
+                            "additional_details": {
+                                "type": "object",
+                                "description": "Additional parameters (key-value pairs, all values must be strings)",
+                                "additionalProperties": {
+                                    "type": "string"
                                 }
                             }
                         }
                     },
                     "generation_config": {
                         "type": "object",
+                        "description": "Configuration used to generate the model outputs for this evaluation result.",
                         "properties": {
                             "generation_args": {
                                 "type": "object",
@@ -427,94 +339,25 @@
                                         "minimum": 1,
                                         "description": "Maximum number of tokens to generate"
                                     },
-                                    "execution_command": {
+                                    "reasoning_effort": {
                                         "type": "string",
-                                        "description": "Command used to run the model to generate results"
+                                        "description": "Reasoning effort requested for the evaluation."
+                                    },
+                                    "verbosity": {
+                                        "type": "string",
+                                        "description": "Verbosity level requested for the model output."
                                     },
                                     "reasoning": {
                                         "type": "boolean",
                                         "description": "Whether reasoning orchain-of-thought was used to generate results"
                                     },
+                                    "max_reasoning_tokens":{
+                                        "type": ["null", "number"],
+                                        "description": ""
+                                    },
                                     "prompt_template": {
                                         "type": "string",
                                         "description": "Input prompt template for task (should contain agentic info if needed)."
-                                    },
-                                    "agentic_eval_config": {
-                                        "type": "object",
-                                        "description": "General configuration for agentic evaluations.",
-                                        "properties": {
-                                            "available_tools": {
-                                                "type": "array",
-                                                "description": "List of all available tools with their configurations",
-                                                "items": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "name": {
-                                                            "type": "string",
-                                                            "description": "e.g. bash, calculator, ..."
-                                                        },
-                                                        "description": {
-                                                            "type": "string"
-                                                        },
-                                                        "parameters": {
-                                                            "type": "object",
-                                                            "description": "Additional parameters (key-value pairs, all values must be strings)",
-                                                            "additionalProperties": {
-                                                                "type": "string"
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                            "additional_details": {
-                                                "type": "object",
-                                                "description": "Additional parameters (key-value pairs, all values must be strings)",
-                                                "additionalProperties": {
-                                                    "type": "string"
-                                                }
-                                            }
-                                        }
-                                    },
-                                    "eval_plan": {
-                                        "type": "object",
-                                        "description": "Plan (solvers) used in evaluation. Solvers are crucial parts of Inspect evaluations which can serve a wide variety of purposes like providing system prompts, prompt engineering, model generation or multi-turn dialog.",
-                                        "properties": {
-                                            "name": {
-                                                "type": "string"
-                                            },
-                                            "steps": {
-                                                "type": "array",
-                                                "description": "Array of evaluation plan steps (each step is a JSON-serialized string)",
-                                                "items": {
-                                                    "type": "string"
-                                                }
-                                            },
-                                            "config": {
-                                                "type": "object",
-                                                "description": "Additional parameters (key-value pairs, all values must be strings)",
-                                                "additionalProperties": {
-                                                    "type": "string"
-                                                }
-                                            }
-                                        }
-                                    },
-                                    "eval_limits": {
-                                        "type": "object",
-                                        "description": "Listed evaluation limits like time limit, message limit, token limit.",
-                                        "properties": {
-                                            "time_limit": {
-                                                "type": "integer",
-                                                "description": "Time limit for evaluation."
-                                            },
-                                            "message_limit": {
-                                                "type": "integer",
-                                                "description": "Message limit for evaluation."
-                                            },
-                                            "token_limit": {
-                                                "type": "integer",
-                                                "description": "Token limit for evaluation."
-                                            }
-                                        }
                                     },
                                     "sandbox": {
                                         "type": "object",
@@ -522,21 +365,8 @@
                                             "type": {
                                                 "type": "string",
                                                 "description": "Type of sandbox e.g. docker"
-                                            },
-                                            "config": {
-                                                "type": "string",
-                                                "description": "Config file name/path e.g. compose.yaml. TODO or full config? Not sure based on the Inspect docs"
                                             }
                                         }
-                                    },
-                                    "max_attempts": {
-                                        "type": "integer",
-                                        "description": "Maximum number of submission attempts.",
-                                        "default": null
-                                    },
-                                    "incorrect_attempt_feedback": {
-                                        "type": "string",
-                                        "description": "Feedback from the model after incorrect attempt."
                                     }
                                 },
                                 "additionalProperties": false
@@ -600,26 +430,66 @@
         }
     },
     "$defs": {
-        "judge_config": {
+        "evaluation_run_url": {
             "type": "object",
-            "description": "Configuration for a single LLM judge/juror",
             "required": [
-                "model_info"
+                "location_type",
+                "location"
             ],
             "properties": {
-                "model_info": {
-                    "$ref": "#/$defs/model_info"
+                "location_type": {
+                    "const": "url"
                 },
-                "temperature": {
-                    "type": "number"
-                },
-                "weight": {
-                    "type": "number",
-                    "description": "Weight of this judge's score in aggregation (used in jury)"
+                "location": {
+                    "type": "string",
+                    "description": "URL for the evaluation run or its artifacts."
                 },
                 "additional_details": {
                     "type": "object",
-                    "description": "Additional parameters (key-value pairs, all values must be strings)",
+                    "description": "Additional location metadata (key-value pairs, all values must be strings).",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "evaluation_run_hf": {
+            "type": "object",
+            "description": "Location of evaluation artifacts stored in a Hugging Face repository.",
+            "required": [
+                "location_type",
+                "hf_repo"
+            ],
+            "properties": {
+                "location_type": {
+                    "const": "hf_repo"
+                },
+                "hf_repo": {
+                    "type": "string",
+                    "description": "Hugging Face repository identifier."
+                },
+                "additional_details": {
+                    "type": "object",
+                    "description": "Additional location metadata (key-value pairs, all values must be strings).",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "evaluation_run_private": {
+            "type": "object",
+            "description": "Indicates that the evaluation location is private or intentionally omitted.",
+            "required": [
+                "location_type"
+            ],
+            "properties": {
+                "location_type": {
+                    "const": "other"
+                },
+                "additional_details": {
+                    "type": "object",
+                    "description": "Additional location metadata (key-value pairs, all values must be strings).",
                     "additionalProperties": {
                         "type": "string"
                     }
