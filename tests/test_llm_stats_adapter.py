@@ -285,15 +285,20 @@ def test_aa_omniscience_normalizes_mixed_live_scores_and_validates(
         assert evaluation_result.metric_config.metric_unit == 'points'
 
     assert grok.score_details.additional_details['raw_score'] == '126'
-    assert grok.score_details.additional_details['raw_normalized_score'] == '0.63'
+    assert (
+        grok.score_details.additional_details['raw_normalized_score'] == '0.63'
+    )
     assert grok.score_details.additional_details['transformation_strategy'] == (
         'normalized_score_to_signed_range'
     )
     assert liquid.score_details.additional_details['raw_score'] == '-29.5'
-    assert liquid.score_details.additional_details['raw_normalized_score'] == 'null'
-    assert liquid.score_details.additional_details['transformation_strategy'] == (
-        'self_reported_signed_raw_score'
+    assert (
+        liquid.score_details.additional_details['raw_normalized_score']
+        == 'null'
     )
+    assert liquid.score_details.additional_details[
+        'transformation_strategy'
+    ] == ('self_reported_signed_raw_score')
 
     output_dir = tmp_path / 'data' / 'llm-stats'
     paths = adapter.export_logs(result.records, output_dir)

@@ -18,11 +18,7 @@ def test_helper_schema_version_is_independent_of_checkout_layout(
     monkeypatch, tmp_path: Path
 ) -> None:
     installed_module = (
-        tmp_path
-        / 'site-packages'
-        / 'every_eval_ever'
-        / 'helpers'
-        / 'schema.py'
+        tmp_path / 'site-packages' / 'every_eval_ever' / 'helpers' / 'schema.py'
     )
     monkeypatch.setattr(helper_schema, '__file__', str(installed_module))
 
@@ -40,7 +36,9 @@ def test_adapter_data_files_are_included_in_wheels() -> None:
         pytest.skip(f'pyproject.toml not available: {PYPROJECT}')
 
     pyproject = tomllib.loads(PYPROJECT.read_text(encoding='utf-8'))
-    patterns = pyproject['tool']['setuptools']['package-data']['every_eval_ever']
+    patterns = pyproject['tool']['setuptools']['package-data'][
+        'every_eval_ever'
+    ]
     packaged = {
         path.resolve()
         for pattern in patterns

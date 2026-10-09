@@ -180,9 +180,7 @@ def test_plan_carries_the_timeout_and_extra_packages(capsys) -> None:
 
 
 def test_plan_accepts_a_comma_separated_adapter_list(capsys) -> None:
-    assert (
-        cli.main(['plan', '--adapter', 'livebench, terminal_bench']) == 0
-    )
+    assert cli.main(['plan', '--adapter', 'livebench, terminal_bench']) == 0
 
     matrix = json.loads(capsys.readouterr().out)
     assert [entry['adapter'] for entry in matrix['include']] == [

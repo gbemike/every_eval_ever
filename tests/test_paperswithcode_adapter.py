@@ -452,9 +452,9 @@ def test_canonical_spelling_prefers_the_hf_url_over_the_slug():
     assert adapter.canonical_spelling({slug}) == slug
     # urls that disagree in case still resolve to one, and to the same one
     other = ('moonshotai/KIMI-K2.5', 'moonshotai', 'KIMI-K2.5')
-    assert adapter.canonical_spelling({hf, other}) == adapter.canonical_spelling(
-        {other, hf}
-    )
+    assert adapter.canonical_spelling(
+        {hf, other}
+    ) == adapter.canonical_spelling({other, hf})
 
 
 def _availability(*flags, url=None):
@@ -715,8 +715,13 @@ def test_accuracy_rescaled_to_canonical_in_build():
         assert 0.0 <= r.score_details.score <= 1.0
         # singleton board (one Accuracy row) with a value impossible under [0,1]:
         # fixed per-row by /100 (multiplier 0.01), raw kept in raw_value.
-        assert r.score_details.additional_details.get('canonical_rescale_factor') == '0.01'
-        assert r.score_details.additional_details.get('rescale_basis') == 'per_row'
+        assert (
+            r.score_details.additional_details.get('canonical_rescale_factor')
+            == '0.01'
+        )
+        assert (
+            r.score_details.additional_details.get('rescale_basis') == 'per_row'
+        )
 
 
 def test_resolver_unresolved_is_recorded_and_falls_back():
@@ -818,8 +823,12 @@ def test_dump_version_retains_subday_suffix_for_distinct_same_day_dumps():
     assert adapter.dump_version_from_path('pwc_20260716.dump') == '20260716'
     # Two dumps on the same date keep their _HHMMSS suffix, so they get distinct
     # versions -> distinct evaluation_ids rather than colliding on the date.
-    v1 = adapter.dump_version_from_path('paperswithcode_hf_20260716_031511.dump')
-    v2 = adapter.dump_version_from_path('paperswithcode_hf_20260716_144207.dump')
+    v1 = adapter.dump_version_from_path(
+        'paperswithcode_hf_20260716_031511.dump'
+    )
+    v2 = adapter.dump_version_from_path(
+        'paperswithcode_hf_20260716_144207.dump'
+    )
     assert v1 == '20260716_031511'
     assert v2 == '20260716_144207'
     assert v1 != v2
@@ -927,14 +936,16 @@ def test_a_rescaled_score_carries_its_spread_on_the_same_scale():
     assert sd.additional_details['reported_uncertainty'] == '0.82'
     # Compared as a number, not a string: the multiply is left exact, the same
     # way the rescaled score is, so the repr can carry a float artifact.
-    assert float(sd.additional_details['reported_uncertainty_canonical']) == pytest.approx(
-        0.0082
-    )
+    assert float(
+        sd.additional_details['reported_uncertainty_canonical']
+    ) == pytest.approx(0.0082)
 
 
 def test_an_unrescaled_score_does_not_repeat_its_spread():
     """Repeating an unchanged figure under a second key only invites drift."""
-    sd = adapter.score_details({'id': '1'}, '0.337 ± 0.0082', 0.337, '0.0082', {}, None)
+    sd = adapter.score_details(
+        {'id': '1'}, '0.337 ± 0.0082', 0.337, '0.0082', {}, None
+    )
 
     assert sd.additional_details['reported_uncertainty'] == '0.0082'
     assert 'reported_uncertainty_canonical' not in sd.additional_details

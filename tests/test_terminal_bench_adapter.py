@@ -147,8 +147,9 @@ def test_newer_versions_keep_effort_trials_and_distinct_ids(tmp_path: Path):
         'terminal-bench-4.0/16db8ad5-84aa-4588-b660-1ce68c0d45e2',
     ]
     assert [
-        log.evaluation_results[0]
-        .generation_config.generation_args.reasoning_effort
+        log.evaluation_results[
+            0
+        ].generation_config.generation_args.reasoning_effort
         for log in logs
     ] == ['max', 'xhigh']
     result = logs[0].evaluation_results[0]

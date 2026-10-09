@@ -35,6 +35,7 @@ def _repo_not_found(repo_id: object) -> RepositoryNotFoundError:
     )
     return RepositoryNotFoundError(f'{repo_id} not found', response=response)
 
+
 @pytest.fixture(autouse=True)
 def retry_waits(monkeypatch) -> list[int]:
     """Record the commit backoff instead of waiting it out.
@@ -750,9 +751,9 @@ def test_the_backoff_grows_and_separates_concurrent_jobs() -> None:
     assert all(len(window) > 1 for window in windows), 'no jitter'
     assert max(windows[0]) <= min(windows[1])
     assert max(windows[1]) <= min(windows[2])
-    assert (
-        store.commit_retry_delay(99) <= store.COMMIT_RETRY_MAX_SECONDS
-    ), 'the window has a ceiling'
+    assert store.commit_retry_delay(99) <= store.COMMIT_RETRY_MAX_SECONDS, (
+        'the window has a ceiling'
+    )
 
 
 def test_a_reference_survives_a_run_of_unchanged_days(tmp_path) -> None:
@@ -1093,9 +1094,7 @@ def test_a_large_batch_is_split_and_numbered(tmp_path) -> None:
     ]
     assert [len(commit['operations']) for commit in hub.commits] == [3, 3, 1]
     # Every commit of the run describes it, not just the first.
-    assert all(
-        commit['commit_description'] == 'body' for commit in hub.commits
-    )
+    assert all(commit['commit_description'] == 'body' for commit in hub.commits)
     assert len(submission.committed_paths) == 7
 
 
@@ -1402,8 +1401,10 @@ def test_the_submitter_refuses_an_empty_repository_id() -> None:
 def test_is_commit_conflict_detects_precondition_failed_messages() -> None:
     """Commit conflicts carry various status/message formats without a response object."""
     exc1 = RuntimeError("Client error '412 Precondition Failed' for url...")
-    exc2 = RuntimeError("The branch was updated since you opened this page. Please refresh and try again.")
-    exc3 = RuntimeError("409 Client Error: Conflict for url...")
+    exc2 = RuntimeError(
+        'The branch was updated since you opened this page. Please refresh and try again.'
+    )
+    exc3 = RuntimeError('409 Client Error: Conflict for url...')
 
     assert store.is_commit_conflict(exc1)
     assert store.is_commit_conflict(exc2)

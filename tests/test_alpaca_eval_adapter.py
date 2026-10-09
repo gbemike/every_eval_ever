@@ -228,9 +228,7 @@ def snapshot_file(tmp_path):
 
 
 def test_model_slug_from_unnamed_column():
-    assert (
-        model_slug_from_row({'': 'my_model', 'win_rate': '50'}) == 'my_model'
-    )
+    assert model_slug_from_row({'': 'my_model', 'win_rate': '50'}) == 'my_model'
 
 
 def test_model_slug_fallback_to_first_value():
@@ -315,6 +313,7 @@ def test_eval_library_version_comes_from_upstream_package():
         == DEFAULT_UPSTREAM_REF
     )
 
+
 def test_evaluation_id_is_stable_and_pins_the_upstream_revision():
     first = _adapter(v1_rows=[_V1_ROW]).fetch_leaderboard('v1')[0]
     second = _adapter(v1_rows=[_V1_ROW]).fetch_leaderboard('v1')[0]
@@ -380,7 +379,10 @@ def test_metrics_without_a_canonical_keep_a_namespaced_local_id():
     by_metric = _by_metric(log)
 
     for name, expected_id in (
-        ('length_controlled_win_rate', 'alpaca_eval.length_controlled_win_rate'),
+        (
+            'length_controlled_win_rate',
+            'alpaca_eval.length_controlled_win_rate',
+        ),
         ('discrete_win_rate', 'alpaca_eval.discrete_win_rate'),
         ('avg_length', 'alpaca_eval.avg_length'),
     ):
@@ -407,9 +409,12 @@ def test_evaluation_name_prefers_the_registrys_benchmark_id():
     assert {r.evaluation_name for r in v1.evaluation_results} == {
         'alpaca_eval.v1'
     }
-    assert v1.evaluation_results[0].metric_config.additional_details[
-        'benchmark_registry_strategy'
-    ] == 'no_canonical'
+    assert (
+        v1.evaluation_results[0].metric_config.additional_details[
+            'benchmark_registry_strategy'
+        ]
+        == 'no_canonical'
+    )
 
 
 def test_win_rates_are_published_on_the_registrys_scale():
@@ -437,9 +442,9 @@ def test_win_rates_are_published_on_the_registrys_scale():
         <= lc.score_details.score
         <= lc.metric_config.max_score
     )
-    assert lc.score_details.additional_details['source_length_controlled_winrate'] == (
-        '55.12'
-    )
+    assert lc.score_details.additional_details[
+        'source_length_controlled_winrate'
+    ] == ('55.12')
 
 
 def test_standard_error_is_analytic_and_on_the_score_scale():
@@ -554,8 +559,12 @@ def test_v1_and_v2_use_different_judges_and_prompts():
     v1 = _by_metric(_adapter(v1_rows=[_V1_ROW]).fetch_leaderboard('v1')[0])
     v2 = _by_metric(_adapter(v2_rows=[_V2_ROW]).fetch_leaderboard('v2')[0])
 
-    v1_scoring = json.loads(v1['win_rate'].metric_config.additional_details['llm_scoring'])
-    v2_scoring = json.loads(v2['win_rate'].metric_config.additional_details['llm_scoring'])
+    v1_scoring = json.loads(
+        v1['win_rate'].metric_config.additional_details['llm_scoring']
+    )
+    v2_scoring = json.loads(
+        v2['win_rate'].metric_config.additional_details['llm_scoring']
+    )
     assert v1_scoring['judges'][0]['model_info']['id'] == 'openai/gpt-4'
     assert v1_scoring['judges'][0]['temperature'] == 0.0
     assert v1_scoring['input_prompt'] == _V1_JUDGE_PROMPT
@@ -581,8 +590,9 @@ def test_source_data_points_at_the_evaluated_hf_dataset():
     assert source_data.additional_details['hf_config'] == (
         'alpaca_eval_gpt4_baseline'
     )
-    assert LEADERBOARDS['v2']['csv_path'] in (
-        source_data.additional_details['leaderboard_csv_url']
+    assert (
+        LEADERBOARDS['v2']['csv_path']
+        in (source_data.additional_details['leaderboard_csv_url'])
     )
 
 
@@ -1259,9 +1269,7 @@ def test_a_ref_that_names_no_commit_fails_before_any_artefact_is_fetched(
     payload,
 ):
     with pytest.MonkeyPatch.context() as patcher:
-        patcher.setattr(
-            upstream_mod, 'fetch_text', lambda *_a, **_k: payload
-        )
+        patcher.setattr(upstream_mod, 'fetch_text', lambda *_a, **_k: payload)
 
         with pytest.raises(FetchError):
             resolve_ref('no-such-branch')
@@ -1323,9 +1331,12 @@ def test_two_default_runs_do_not_pool_their_output(snapshot_file, tmp_path):
     """
     snapshot_path = snapshot_file(v1_rows=[_V1_ROW])
     argv = [
-        'convert', 'alpaca_eval',
-        '--version', 'v1',
-        '--input-json', str(snapshot_path),
+        'convert',
+        'alpaca_eval',
+        '--version',
+        'v1',
+        '--input-json',
+        str(snapshot_path),
         '--no-registry-resolve',
     ]
 
@@ -1608,9 +1619,10 @@ def test_registry_can_be_switched_off_without_losing_provenance():
     assert win_rate.additional_details['metric_registry_strategy'] == (
         'registry_disabled'
     )
-    assert log.model_info.additional_details[
-        'developer_registry_strategy'
-    ] == 'registry_disabled'
+    assert (
+        log.model_info.additional_details['developer_registry_strategy']
+        == 'registry_disabled'
+    )
     # Falls back to the source-derived spelling rather than to nothing.
     assert log.model_info.developer == log.model_info.id.split('/')[0]
 

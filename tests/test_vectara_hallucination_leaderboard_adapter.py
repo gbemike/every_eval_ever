@@ -213,18 +213,14 @@ def test_constant_provenance_is_not_repeated_per_result(
 # ===================================================================
 
 
-def test_schema_version_tracks_the_packaged_schema(
-    source_rows, tmp_path: Path
-):
+def test_schema_version_tracks_the_packaged_schema(source_rows, tmp_path: Path):
     result = convert(source_rows, tmp_path / 'data' / adapter.COLLECTION)
 
     for output in result.records:
         assert output.eval_log.schema_version == get_schema_version()
 
 
-def test_evaluation_id_is_stable_across_refreshes(
-    source_rows, tmp_path: Path
-):
+def test_evaluation_id_is_stable_across_refreshes(source_rows, tmp_path: Path):
     """Idempotency must come from the key, not from a frozen timestamp."""
     first = adapter.convert_rows(source_rows, '1', str(tmp_path / 'a'))
     second = adapter.convert_rows(source_rows, '2', str(tmp_path / 'b'))
@@ -287,8 +283,7 @@ def test_unrepresentable_score_is_recorded_and_the_rest_still_convert(
         if output.eval_log.model_info.id == 'microsoft/Phi-4'
     )
     assert (
-        len(phi.eval_log.evaluation_results)
-        == EXPECTED_RESULTS_PER_MODEL - 1
+        len(phi.eval_log.evaluation_results) == EXPECTED_RESULTS_PER_MODEL - 1
     )
 
 
@@ -312,8 +307,8 @@ def test_malformed_row_produces_no_output(source_rows, tmp_path: Path):
 
     assert len(result.records) == len(rows) - 1
     assert any(
-        failure.source_ref == path and 'results must be an object' in
-        failure.reason
+        failure.source_ref == path
+        and 'results must be an object' in failure.reason
         for failure in result.failures
     )
     with pytest.raises(Exception):
@@ -325,9 +320,7 @@ def test_malformed_row_produces_no_output(source_rows, tmp_path: Path):
 # ===================================================================
 
 
-def test_published_records_pass_the_datastore_gate(
-    source_rows, tmp_path: Path
-):
+def test_published_records_pass_the_datastore_gate(source_rows, tmp_path: Path):
     """Semantic checks on, at a real datastore path — what the merge gate runs.
 
     ``validate_file`` defaults ``run_semantic_checks=False``, so a green

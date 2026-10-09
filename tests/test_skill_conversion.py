@@ -136,11 +136,17 @@ def _sample_item() -> types.SimpleNamespace:
 
 def _assert_gate_clean(paths: list[Path], capsys) -> None:
     """Run the real validator CLI over `paths`; require errors AND warnings empty."""
-    exit_code = validate_main([str(path) for path in paths] + ['--format', 'json'])
+    exit_code = validate_main(
+        [str(path) for path in paths] + ['--format', 'json']
+    )
     reports = json.loads(capsys.readouterr().out)
     # Warnings count as failures here: fix the skill, don't drop the assertion.
     complaints = [
-        {'file': report['file'], 'errors': report['errors'], 'warnings': report['warnings']}
+        {
+            'file': report['file'],
+            'errors': report['errors'],
+            'warnings': report['warnings'],
+        }
         for report in reports
         if not report['valid'] or report['errors'] or report['warnings']
     ]
@@ -160,7 +166,9 @@ def _assert_gate_clean(paths: list[Path], capsys) -> None:
 def test_skill_records_the_current_schema_version():
     """A schema bump must force a re-read of the skill's field claims."""
     skill_text = (SKILL_DIR / 'SKILL.md').read_text(encoding='utf-8')
-    recorded = re.search(r'`SCHEMA_VERSION`\s+`([0-9]+\.[0-9]+\.[0-9]+)`', skill_text)
+    recorded = re.search(
+        r'`SCHEMA_VERSION`\s+`([0-9]+\.[0-9]+\.[0-9]+)`', skill_text
+    )
     assert recorded, _remedy(
         'SKILL.md no longer records the schema version it was written against.',
         where='restore the "Written against EEE `SCHEMA_VERSION` `x.y.z`" line',
@@ -181,7 +189,9 @@ def test_aggregate_template_publishes_gate_clean_records(tmp_path, capsys):
     aggregate = _load_template('aggregate_adapter.py')
     out_root = tmp_path / 'data'
 
-    result = aggregate.convert_rows([_valid_row()], out_root, FROZEN_RETRIEVED_TS)
+    result = aggregate.convert_rows(
+        [_valid_row()], out_root, FROZEN_RETRIEVED_TS
+    )
     paths = aggregate.save_evaluation_logs(result.records)
 
     assert [path.parent for path in paths] == [
@@ -202,7 +212,11 @@ def test_aggregate_template_accounts_for_unconvertible_rows(tmp_path):
         [_valid_row(), _unconvertible_row()], out_root, FROZEN_RETRIEVED_TS
     )
 
-    assert (result.total_records, len(result.records), len(result.failures)) == (2, 1, 1), _remedy(
+    assert (
+        result.total_records,
+        len(result.records),
+        len(result.failures),
+    ) == (2, 1, 1), _remedy(
         'The template silently dropped or silently kept an unconvertible row.',
         where=(
             'the SourceRecordFailure branch in templates/aggregate_adapter.py '
@@ -258,7 +272,12 @@ def test_instance_template_refuses_an_orphan_sample(tmp_path):
             log,
             'demo-org',
             'demo-model',
-            [_sample_item(), types.SimpleNamespace(**{**vars(_sample_item()), 'benchmark': 'absent_bench'})],
+            [
+                _sample_item(),
+                types.SimpleNamespace(
+                    **{**vars(_sample_item()), 'benchmark': 'absent_bench'}
+                ),
+            ],
             tmp_path / 'data',
             tmp_path / 'staged' / 'data',
             collection=SRC_SLUG,

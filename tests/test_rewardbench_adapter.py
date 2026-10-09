@@ -25,8 +25,7 @@ def test_random_baseline_is_recorded_as_non_failing_exclusion(tmp_path):
 def test_invalid_metric_does_not_discard_other_model_metrics(tmp_path):
     row = {
         'Model': (
-            '<a href="https://huggingface.co/example/model-a">'
-            'Model A</a>'
+            '<a href="https://huggingface.co/example/model-a">Model A</a>'
         ),
         'Score': '75',
         'Chat': 'not-a-score',
@@ -88,10 +87,7 @@ def test_closed_model_identifier_falls_back_to_display_name(tmp_path):
     assert result.failures == []
     assert result.records[0].developer == 'Anthropic'
     assert result.records[0].model_name == 'claude-3-opus'
-    assert (
-        result.records[0].eval_log.model_info.id
-        == 'Anthropic/claude-3-opus'
-    )
+    assert result.records[0].eval_log.model_info.id == 'Anthropic/claude-3-opus'
 
 
 def test_hugging_face_id_extraction_rejects_external_and_lookalike_hosts():
@@ -102,9 +98,7 @@ def test_hugging_face_id_extraction_rejects_external_and_lookalike_hosts():
         == 'example/model'
     )
     assert (
-        extract_hf_model_id_from_html(
-            '<a href="/example/model">Model</a>'
-        )
+        extract_hf_model_id_from_html('<a href="/example/model">Model</a>')
         == 'example/model'
     )
     assert (
@@ -115,8 +109,7 @@ def test_hugging_face_id_extraction_rejects_external_and_lookalike_hosts():
     )
     assert (
         extract_hf_model_id_from_html(
-            '<a href="https://huggingface.co.example.com/org/model">'
-            'Model</a>'
+            '<a href="https://huggingface.co.example.com/org/model">Model</a>'
         )
         is None
     )

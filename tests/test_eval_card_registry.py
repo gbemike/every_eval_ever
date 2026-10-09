@@ -58,8 +58,12 @@ def test_namespaces_are_recorded_only_where_the_registry_declares_one():
     which is the pattern guess this direction exists to avoid.
     """
     namespaces = org_hf_namespaces(
-        [_org('meta', 'meta-llama'), _org('mistralai', 'mistralai'),
-         _org('amazon'), _org('acme', '')]
+        [
+            _org('meta', 'meta-llama'),
+            _org('mistralai', 'mistralai'),
+            _org('amazon'),
+            _org('acme', ''),
+        ]
     )
 
     assert namespaces == {'meta': 'meta-llama', 'mistralai': 'mistralai'}
@@ -258,9 +262,7 @@ def test_no_alpaca_eval_publisher_needs_the_normalized_tiers():
         'anthropic',
     )
     weak = {'snapshot_normalized', 'snapshot_alias_normalized'}
-    resolved = {
-        namespace: registry.org(namespace) for namespace in namespaces
-    }
+    resolved = {namespace: registry.org(namespace) for namespace in namespaces}
 
     assert not [
         namespace

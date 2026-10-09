@@ -33,7 +33,9 @@ def test_single_model_conversion_remains_strict():
     except ValueError as exc:
         assert "Evaluation 'bbh' could not be converted" in str(exc)
     else:
-        raise AssertionError('expected strict conversion to reject missing score')
+        raise AssertionError(
+            'expected strict conversion to reject missing score'
+        )
 
 
 def test_batch_keeps_valid_metrics_and_records_missing_metric():
@@ -82,9 +84,7 @@ def test_process_models_writes_valid_output_and_external_failure_report(
     assert len(outputs) == 1
     assert validate_file(outputs[0]).valid
 
-    report_path = (
-        tmp_path / 'adapter_reports' / 'hfopenllm_v2_failures.json'
-    )
+    report_path = tmp_path / 'adapter_reports' / 'hfopenllm_v2_failures.json'
     report = json.loads(report_path.read_text())
     assert report['converted_records'] == 1
     assert len(report['failed_records']) == 1

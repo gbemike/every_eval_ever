@@ -37,7 +37,11 @@ def _payload(*, source_scale: str = 'identity') -> dict[str, object]:
                     'developer': 'example-org',
                 },
                 'source_metrics_sha256': adapter.source_metrics_sha256(
-                    {'AUROC': '99.49' if source_scale == 'percent' else '0.9949'}
+                    {
+                        'AUROC': '99.49'
+                        if source_scale == 'percent'
+                        else '0.9949'
+                    }
                 ),
                 'qualification': {
                     'benchmark_id': (
@@ -199,14 +203,20 @@ def test_auroc_output_matches_generic_pwc_canonical_contract() -> None:
     assert result.metric_config.score_type == generic.score_type
     assert result.metric_config.min_score == generic.min_score
     assert result.metric_config.max_score == generic.max_score
-    assert result.metric_config.additional_details['bound_registry_revision'] == (
-        REGISTRY_REVISION
-    )
+    assert result.metric_config.additional_details[
+        'bound_registry_revision'
+    ] == (REGISTRY_REVISION)
     assert result.metric_config.additional_details['observed_min'] == '99.49'
     assert result.metric_config.additional_details['observed_max'] == '99.49'
     assert result.score_details.score == pytest.approx(0.9949)
-    assert result.score_details.additional_details['reviewed_source_scale'] == 'percent'
-    assert result.score_details.additional_details['applied_scale_factor'] == '0.01'
+    assert (
+        result.score_details.additional_details['reviewed_source_scale']
+        == 'percent'
+    )
+    assert (
+        result.score_details.additional_details['applied_scale_factor']
+        == '0.01'
+    )
 
 
 def test_observed_range_is_derived_from_source_rows() -> None:

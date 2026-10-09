@@ -543,7 +543,9 @@ def test_result_id_binds_protocol_semantics_for_the_same_source_cell() -> None:
     assert baseline.score_details.score == changed.score_details.score
     assert (
         baseline.score_details.additional_details['protocol_semantic_sha256']
-        != (changed.score_details.additional_details['protocol_semantic_sha256'])
+        != (
+            changed.score_details.additional_details['protocol_semantic_sha256']
+        )
     )
 
 
@@ -633,16 +635,24 @@ def test_explicit_percent_scale_converts_without_distribution_inference() -> (
     score = log.evaluation_results[0]
     qualification = overlay.entries[0].qualification
     assert score.evaluation_name == qualification.benchmark_id
-    assert score.score_details.additional_details['protocol_semantic_sha256'] == (
-        qualification.semantic_sha256()
-    )
+    assert score.score_details.additional_details[
+        'protocol_semantic_sha256'
+    ] == (qualification.semantic_sha256())
     assert score.score_details.score == pytest.approx(0.9949)
     assert score.metric_config.metric_id == 'auroc'
     assert score.metric_config.metric_unit == 'proportion'
     assert score.score_details.additional_details['raw_value'] == '99.49'
-    assert score.score_details.additional_details['reviewed_source_scale'] == 'percent'
-    assert score.score_details.additional_details['applied_scale_factor'] == '0.01'
-    assert score.score_details.additional_details['generalization_regime'] == 'inductive'
+    assert (
+        score.score_details.additional_details['reviewed_source_scale']
+        == 'percent'
+    )
+    assert (
+        score.score_details.additional_details['applied_scale_factor'] == '0.01'
+    )
+    assert (
+        score.score_details.additional_details['generalization_regime']
+        == 'inductive'
+    )
     assert score.source_data.dataset_name == 'DrugBank'
     assert (
         'https://paperswithcode.com/dataset/drugbank'

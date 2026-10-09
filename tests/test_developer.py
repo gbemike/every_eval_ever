@@ -41,7 +41,9 @@ SAME_MODEL_TWO_SPELLINGS = [
 def test_one_model_gets_one_developer_however_it_is_spelled(
     slashed: str, bare: str
 ) -> None:
-    assert get_developer(bare) == get_developer(slashed) == slashed.split('/')[0]
+    assert (
+        get_developer(bare) == get_developer(slashed) == slashed.split('/')[0]
+    )
 
 
 def test_a_closed_model_keeps_its_company_because_it_has_no_namespace():

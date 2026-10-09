@@ -206,8 +206,12 @@ def test_preserves_source_fields_and_uncertainty():
     assert overall.metric_config.metric_unit == 'percent'
     assert overall.metric_config.max_score == 100
     assert overall.score_details.score == 72.222
-    assert overall.score_details.additional_details['cost_per_test'] == '0.785991'
-    assert overall.score_details.additional_details['reasoning_effort'] == 'high'
+    assert (
+        overall.score_details.additional_details['cost_per_test'] == '0.785991'
+    )
+    assert (
+        overall.score_details.additional_details['reasoning_effort'] == 'high'
+    )
     assert overall.score_details.uncertainty.standard_error.value == 4.748
 
 

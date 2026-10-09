@@ -350,7 +350,10 @@ def test_startup_failures_are_excluded_without_failing_the_run(tmp_path: Path):
     logs, _kept, _attempts, result = adapter.convert(_args(tmp_path, logs_dir))
 
     assert logs[0].evaluation_results[0].score_details.score == 1.0
-    assert logs[0].evaluation_results[0].score_details.additional_details['total'] == '1'
+    assert (
+        logs[0].evaluation_results[0].score_details.additional_details['total']
+        == '1'
+    )
     assert len(result.exclusions) == 1
     assert 'startup failure' in result.exclusions[0].reason
     result.raise_if_incomplete()

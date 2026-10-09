@@ -251,18 +251,17 @@ def test_voice_interaction_metrics_are_emitted_with_units_and_direction():
     assert latency.metric_config.max_score == float('inf')
     assert latency.score_details.score == 1.23
     assert (
-        json.loads(latency.score_details.additional_details['counts'])['n_simulations']
+        json.loads(latency.score_details.additional_details['counts'])[
+            'n_simulations'
+        ]
         == 50
     )
     assert (
-        latency.metric_config.additional_details[
-            'interaction_metrics_version'
-        ]
+        latency.metric_config.additional_details['interaction_metrics_version']
         == '1.0'
     )
     assert (
-        'interaction_metrics_config'
-        in latency.metric_config.additional_details
+        'interaction_metrics_config' in latency.metric_config.additional_details
     )
 
     response_rate = by_id[f'{prefix}:retail:response_rate']
@@ -465,9 +464,10 @@ def test_local_replay_does_not_claim_an_upstream_url(tmp_path):
 
     assert loaded[0].source_url is None
     assert loaded[0].local_path == str(submission_dir / 'submission.json')
-    assert loaded[0].content_sha256 == hashlib.sha256(
-        payload.encode('utf-8')
-    ).hexdigest()
+    assert (
+        loaded[0].content_sha256
+        == hashlib.sha256(payload.encode('utf-8')).hexdigest()
+    )
 
     log = adapter.make_logs(loaded, retrieved_timestamp='1.0')[0].log
     source_data = log.evaluation_results[0].source_data

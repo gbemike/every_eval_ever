@@ -223,7 +223,8 @@ def test_evaluation_name_is_the_benchmark_and_the_metric_is_named():
         for result in results
     )
     assert {
-        result.score_details.additional_details['perturbation'] for result in results
+        result.score_details.additional_details['perturbation']
+        for result in results
     } == {'', 'robustness', 'fairness'}
 
 
@@ -265,7 +266,8 @@ def test_num_samples_counts_instances_not_train_trials():
         result.score_details.uncertainty.num_samples for result in results
     } == {10}
     assert {
-        result.score_details.additional_details['num_train_trials'] for result in results
+        result.score_details.additional_details['num_train_trials']
+        for result in results
     } == {'1'}
 
 
@@ -398,9 +400,9 @@ def test_sample_count_survives_a_run_without_per_instance_stats():
 
     by_split = {}
     for result in converted_eval.evaluation_results:
-        by_split.setdefault(result.score_details.additional_details['split'], set()).add(
-            result.score_details.uncertainty.num_samples
-        )
+        by_split.setdefault(
+            result.score_details.additional_details['split'], set()
+        ).add(result.score_details.uncertainty.num_samples)
 
     assert by_split == {'test': {9}, 'valid': {1}}
 
@@ -524,6 +526,7 @@ def test_missing_model_deployment_falls_back_to_model():
     """
     import json
     import shutil
+
     src = Path(
         'tests/data/helm/'
         'mmlu-subject=philosophy,method=multiple_choice_joint,model=openai_gpt2'

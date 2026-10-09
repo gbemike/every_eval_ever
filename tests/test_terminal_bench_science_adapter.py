@@ -98,9 +98,10 @@ def test_overall_and_five_domains_each_carry_their_own_n(payload, tmp_path):
     ]
 
     overall, *domains = log.evaluation_results
-    assert overall.score_details.additional_details[
-        'aggregation_level'
-    ] == 'overall'
+    assert (
+        overall.score_details.additional_details['aggregation_level']
+        == 'overall'
+    )
     assert overall.score_details.uncertainty.num_samples == 210
     # The parts sum to the whole, so a consumer that took both would
     # double-count; each result says which level it is.

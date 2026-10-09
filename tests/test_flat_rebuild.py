@@ -1213,7 +1213,9 @@ def test_moved_companion_conflict_excludes_samples_path():
             path: record_bytes(row.object_uuid, 'gsm8k'),
             sample_path: b'{"x":2000}\n',
         },
-        lambda object_path: published if object_path == row.instance_level_path else None,
+        lambda object_path: (
+            published if object_path == row.instance_level_path else None
+        ),
     )
     assert not result.errors
     assert len(result.conflicts) == 1

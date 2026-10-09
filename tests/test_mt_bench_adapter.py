@@ -160,8 +160,7 @@ def test_source_data_url_contains_judgment_url():
     }
     assert adapter.PAPER_URL not in overall.source_data.url
     assert (
-        overall.source_data.additional_details['paper_url']
-        == adapter.PAPER_URL
+        overall.source_data.additional_details['paper_url'] == adapter.PAPER_URL
     )
     assert overall.source_data.source_type == 'url'
 

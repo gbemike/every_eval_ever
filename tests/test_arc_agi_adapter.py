@@ -18,7 +18,11 @@ def sample_payload() -> dict:
         ],
         'providers': [
             {'id': 'Human', 'displayName': 'Human', 'url': ''},
-            {'id': 'ARC Prize 2024', 'displayName': 'ARC Prize 2024', 'url': ''},
+            {
+                'id': 'ARC Prize 2024',
+                'displayName': 'ARC Prize 2024',
+                'url': '',
+            },
             {'id': 'Anthropic', 'displayName': 'Anthropic', 'url': ''},
             {'id': 'OpenAI', 'displayName': 'OpenAI', 'url': ''},
             {'id': 'New Lab', 'displayName': 'New Lab', 'url': ''},
@@ -144,7 +148,10 @@ def test_converts_each_canonical_model_once():
 
 def test_developer_comes_from_provider_table():
     logs = convert(sample_payload())
-    assert logs['anthropic/claude-fable-5-high'].model_info.developer == 'anthropic'
+    assert (
+        logs['anthropic/claude-fable-5-high'].model_info.developer
+        == 'anthropic'
+    )
     # Kaggle-winner systems keep the historical 'community' developer.
     assert logs['community/architects'].model_info.developer == 'community'
     # The human panel keeps the historical 'arcprize' developer.
@@ -199,7 +206,9 @@ def test_cost_metric_used_when_cost_per_task_missing():
 
 def test_model_metadata_from_models_table():
     logs = convert(sample_payload())
-    details = logs['anthropic/claude-fable-5-high'].model_info.additional_details
+    details = logs[
+        'anthropic/claude-fable-5-high'
+    ].model_info.additional_details
     assert details['source_model_type'] == 'CoT'
     assert details['source_provider_id'] == 'Anthropic'
     assert details['model_release_date'] == '2026-05-01'

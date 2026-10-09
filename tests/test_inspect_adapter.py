@@ -833,9 +833,7 @@ def test_supplemental_eval_details_fill_only_top_level_fields():
         'token_limit': None,
     }
 
-    assert result.score_details.additional_details == {
-        'notes': '["a", "b"]'
-    }
+    assert result.score_details.additional_details == {'notes': '["a", "b"]'}
 
     # Converter-synthetic defaults are override-eligible.
     assert result.metric_config.lower_is_better is True
@@ -995,11 +993,15 @@ def test_supplemental_eval_details_matches_all_results_of_an_evaluation():
             'evaluation_results': [
                 {
                     'evaluation_name': 'inspect_evals/cyse2_vulnerability_exploit',
-                    'score_details': {'additional_details': {'reviewed': 'yes'}},
+                    'score_details': {
+                        'additional_details': {'reviewed': 'yes'}
+                    },
                 },
                 {
                     'evaluation_result_id': 'vul_exploit_scorer:mean',
-                    'score_details': {'additional_details': {'reviewed': 'separately'}},
+                    'score_details': {
+                        'additional_details': {'reviewed': 'separately'}
+                    },
                 },
             ],
         },
@@ -1035,9 +1037,7 @@ def test_supplemental_eval_details_fails_on_deprecated_per_result_schema():
                     'match': {
                         'evaluation_result_id': 'choice:accuracy',
                     },
-                    'score_details': {
-                        'additional_details': {'matched': 1}
-                    },
+                    'score_details': {'additional_details': {'matched': 1}},
                 },
             ]
         },

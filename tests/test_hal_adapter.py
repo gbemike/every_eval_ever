@@ -6,7 +6,6 @@ from every_eval_ever.adapters.hal.adapter import (
     build_eee_record,
     parse_table_result,
 )
-import json
 from every_eval_ever.validator.validation_core import (
     check_model_identity_path,
 )

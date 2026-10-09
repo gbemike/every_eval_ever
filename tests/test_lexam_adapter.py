@@ -1,7 +1,7 @@
 """Unit tests for the LEXam adapter."""
 
-from collections import Counter
 import json
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -238,7 +238,9 @@ def test_judge_scoring_does_not_claim_average_aggregation() -> None:
     llm_scoring = json.loads(details['llm_scoring'])
 
     assert llm_scoring['aggregation_method'] is None
-    assert llm_scoring['additional_details']['aggregation'] == 'pointwise_minimum'
+    assert (
+        llm_scoring['additional_details']['aggregation'] == 'pointwise_minimum'
+    )
 
 
 def test_model_identities_are_resolved_not_invented() -> None:
