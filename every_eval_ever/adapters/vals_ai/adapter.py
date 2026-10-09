@@ -735,7 +735,7 @@ def make_result(
         ),
         score_details=ScoreDetails(
             score=score,
-            details=details,
+            additional_details=details,
             uncertainty=uncertainty,
         ),
         generation_config=make_generation_config(row.metrics),

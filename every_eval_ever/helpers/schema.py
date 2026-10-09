@@ -62,9 +62,6 @@ def make_metric_config(
     if score_type == ScoreType.continuous:
         config.min_score = min_score
         config.max_score = max_score
-    elif score_type == ScoreType.levels and level_names:
-        config.level_names = level_names
-        config.has_unknown_level = has_unknown_level
 
     return config
 
@@ -110,7 +107,7 @@ def make_evaluation_result(
         ),
         score_details=ScoreDetails(
             score=round(score, 4) if score is not None else -1,
-            details=details,
+            additional_details=details,
         ),
         generation_config=generation_config,
     )

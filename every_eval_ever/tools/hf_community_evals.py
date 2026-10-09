@@ -326,7 +326,7 @@ def _datastore_blob_url(
 
 
 def _date_from_result(log: EvaluationLog, result: EvaluationResult) -> str | None:
-    value = result.evaluation_timestamp or log.evaluation_timestamp
+    value = result.evaluation_result_timestamp or log.evaluation_timestamp
     if value is None:
         return None
     try:

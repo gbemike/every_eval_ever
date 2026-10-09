@@ -187,12 +187,14 @@ class TestAggregateValidation:
         data['evaluation_results'][0]['metric_config'] = {
             'lower_is_better': False,
             'score_type': 'levels',
-            # missing level_names and has_unknown_level
         }
         fp = _write_json(tmp_path, 'levels.json', data)
         report = validate_aggregate(fp)
         assert report.valid is False
-        assert any('level_names' in e['msg'] for e in report.errors)
+        assert any(
+            'score_type' in e['loc'] or 'score_type' in e['msg']
+            for e in report.errors
+        )
 
     def test_score_type_continuous_without_min_score_fails(
         self, tmp_path: Path

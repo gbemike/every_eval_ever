@@ -148,7 +148,7 @@ def test_unknown_unprefixed_model_uses_provider_fallback():
         unknown.model_info.additional_details['vals_provider'] == 'Mystery Lab'
     )
     result = unknown.evaluation_results[0]
-    assert result.score_details.details['max_output_tokens'] == '0'
+    assert result.score_details.additional_details['max_output_tokens'] == '0'
     assert result.generation_config is None
 
 
@@ -202,12 +202,12 @@ def test_preserves_source_fields_and_uncertainty():
         == 'https://www.vals.ai/benchmarks/finance_agent'
     )
     assert finance.evaluation_timestamp is None
-    assert overall.evaluation_timestamp is None
+    assert overall.evaluation_result_timestamp is None
     assert overall.metric_config.metric_unit == 'percent'
     assert overall.metric_config.max_score == 100
     assert overall.score_details.score == 72.222
-    assert overall.score_details.details['cost_per_test'] == '0.785991'
-    assert overall.score_details.details['reasoning_effort'] == 'high'
+    assert overall.score_details.additional_details['cost_per_test'] == '0.785991'
+    assert overall.score_details.additional_details['reasoning_effort'] == 'high'
     assert overall.score_details.uncertainty.standard_error.value == 4.748
 
 
