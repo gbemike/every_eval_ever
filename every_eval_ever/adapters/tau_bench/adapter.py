@@ -34,13 +34,10 @@ from pathlib import Path
 from typing import Any
 
 from every_eval_ever.eval_types import (
-    AgenticEvalConfig,
-    AvailableTool,
     EvalLibrary,
     EvaluationLog,
     EvaluationResult,
     EvaluatorRelationship,
-    GenerationArgs,
     GenerationConfig,
     MetricConfig,
     ModelInfo,
@@ -714,13 +711,13 @@ def make_interaction_result(
         ),
         evaluation_name=f'tau_bench.{modality}.{domain}.{spec.key}',
         source_data=make_source_data(record, domain, panel),
-        evaluation_timestamp=evaluation_date(submission),
+        evaluation_result_timestamp=evaluation_date(submission),
         metric_config=make_interaction_metric_config(
             spec, domain=domain, version=version, config=config
         ),
         score_details=ScoreDetails(
             score=score,
-            details=_clean_details(
+            additional_details=_clean_details(
                 {
                     'submission_id': record.submission_id,
                     'model_id': model_id,
@@ -790,11 +787,11 @@ def make_result(
         ),
         evaluation_name=evaluation_name,
         source_data=make_source_data(record, domain, domain_results),
-        evaluation_timestamp=evaluation_date(submission),
+        evaluation_result_timestamp=evaluation_date(submission),
         metric_config=metric_config,
         score_details=ScoreDetails(
             score=score,
-            details=_clean_details(
+            additional_details=_clean_details(
                 {
                     'submission_id': record.submission_id,
                     'model_id': model_id,
@@ -953,20 +950,6 @@ def make_generation_config(
     voice_config = _mapping(submission.get('voice_config'))
     pipeline = voice_config.get('pipeline')
     return GenerationConfig(
-        generation_args=GenerationArgs(
-            agentic_eval_config=AgenticEvalConfig(
-                available_tools=[
-                    AvailableTool(
-                        name=f'tau-bench {domain} tools',
-                        description=(
-                            'Domain-specific customer service tools exposed '
-                            'by the tau-bench environment.'
-                        ),
-                    )
-                ],
-                additional_details=_clean_details({'domain': domain}),
-            )
-        ),
         additional_details=_clean_details(
             {
                 'evaluation_date': methodology.get('evaluation_date'),
@@ -989,6 +972,8 @@ def make_generation_config(
                     'user_tts_provider'
                 ),
                 'voice_pipeline': pipeline,
+                'domain': domain, # moved from removed agentic_eval_config model
+                'tau_bench_tools': f'tau-bench {domain} tools',
             }
         ),
     )

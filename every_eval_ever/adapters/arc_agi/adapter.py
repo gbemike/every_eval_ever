@@ -283,7 +283,7 @@ def _cost_result(
         ),
         score_details=ScoreDetails(
             score=float(row[raw_field]),
-            details={
+            additional_details={
                 **stringify_details(row, exclude_keys={raw_field, 'modelId'}),
                 'raw_model_id': row['modelId'],
                 'raw_model_aliases_json': json.dumps(aliases_for_dataset),
@@ -327,7 +327,7 @@ def make_results(
                 ),
                 score_details=ScoreDetails(
                     score=float(row['score']),
-                    details={
+                    additional_details={
                         **stringify_details(
                             row, exclude_keys={'score', 'modelId'}
                         ),

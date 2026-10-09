@@ -868,7 +868,7 @@ def _build_result(
         ),
         evaluation_name=q.benchmark_id,
         source_data=build_source_data(dataset),
-        evaluation_timestamp=str(row.get('evaluated_on'))
+        evaluation_result_timestamp=str(row.get('evaluated_on'))
         if row.get('evaluated_on')
         else None,
         metric_config=MetricConfig(
@@ -891,7 +891,7 @@ def _build_result(
             },
         ),
         score_details=ScoreDetails(
-            score=score, uncertainty=None, details=details
+            score=score, uncertainty=None, additional_details=details
         ),
     )
 

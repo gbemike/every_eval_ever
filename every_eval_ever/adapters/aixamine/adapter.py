@@ -126,7 +126,7 @@ def _result(service, test_value, name, description, score, categories, eval_ts):
         EvaluationResult(
             evaluation_result_id=f"{SRC}.{service}.{test_value}",
             evaluation_name=bid,
-            evaluation_timestamp=eval_ts,
+            evaluation_result_timestamp=eval_ts,
             source_data=SourceDataPrivate(dataset_name=bid, source_type="other"),
             metric_config=_metric_config(test_value, description),
             score_details=ScoreDetails(score=float(score)),
@@ -137,7 +137,7 @@ def _result(service, test_value, name, description, score, categories, eval_ts):
             EvaluationResult(
                 evaluation_result_id=f"{SRC}.{service}.{test_value}.{cat}",
                 evaluation_name=f"{bid}.{cat}",
-                evaluation_timestamp=eval_ts,
+                evaluation_result_timestamp=eval_ts,
                 source_data=SourceDataPrivate(dataset_name=f"{bid} ({cat})", source_type="other"),
                 metric_config=_metric_config(test_value, f"{name} — {cat}"),
                 score_details=ScoreDetails(score=float(cscore)),

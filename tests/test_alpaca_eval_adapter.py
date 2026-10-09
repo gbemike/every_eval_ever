@@ -315,7 +315,6 @@ def test_eval_library_version_comes_from_upstream_package():
         == DEFAULT_UPSTREAM_REF
     )
 
-
 def test_evaluation_id_is_stable_and_pins_the_upstream_revision():
     first = _adapter(v1_rows=[_V1_ROW]).fetch_leaderboard('v1')[0]
     second = _adapter(v1_rows=[_V1_ROW]).fetch_leaderboard('v1')[0]
@@ -438,7 +437,7 @@ def test_win_rates_are_published_on_the_registrys_scale():
         <= lc.score_details.score
         <= lc.metric_config.max_score
     )
-    assert lc.score_details.details['source_length_controlled_winrate'] == (
+    assert lc.score_details.additional_details['source_length_controlled_winrate'] == (
         '55.12'
     )
 
@@ -472,7 +471,7 @@ def test_no_standard_error_is_invented_where_the_column_is_absent():
 
 def test_raw_comparison_counts_are_preserved():
     log = _adapter(v1_rows=[_V1_ROW]).fetch_leaderboard('v1')[0]
-    details = _by_metric(log)['win_rate'].score_details.details
+    details = _by_metric(log)['win_rate'].score_details.additional_details
 
     assert details['n_wins'] == '767'
     assert details['n_wins_base'] == '38'
@@ -516,7 +515,7 @@ def test_avg_length_is_unscaled_characters_and_unbounded_above():
     assert result.metric_config.metric_kind == 'length'
     assert result.metric_config.max_score == float('inf')
     # Not a quality metric, and not judge-produced.
-    assert result.metric_config.llm_scoring is None
+    assert 'llm_scoring' not in result.metric_config.additional_details
     assert result.score_details.uncertainty is None
     assert 'character' in result.metric_config.evaluation_description.lower()
 
@@ -536,30 +535,35 @@ def test_metric_parameters_record_the_baseline_and_annotator():
 
 def test_judge_is_recorded_with_its_verbatim_prompt():
     log = _adapter(v2_rows=[_V2_ROW]).fetch_leaderboard('v2')[0]
-    scoring = _by_metric(log)['win_rate'].metric_config.llm_scoring
+    details = _by_metric(log)['win_rate'].metric_config.additional_details
+    scoring = json.loads(details['llm_scoring'])
+    judge = scoring['judges'][0]
 
-    assert scoring.input_prompt == _V2_JUDGE_PROMPT
-    assert len(scoring.judges) == 1
-    judge = scoring.judges[0]
-    assert judge.model_info.id == 'openai/gpt-4-1106-preview'
-    assert judge.model_info.developer == 'openai'
-    assert judge.temperature == 1.0
-    assert judge.additional_details['completion_parser'] == 'logprob_parser'
-    assert judge.additional_details['top_logprobs'] == '5'
-    assert scoring.additional_details['baseline_model'] == 'gpt4_turbo'
+    assert isinstance(scoring, dict)
+    assert isinstance(scoring['judges'], list)
+    assert scoring['input_prompt'] == _V2_JUDGE_PROMPT
+    assert scoring['additional_details']['baseline_model'] == 'gpt4_turbo'
+    assert judge['model_info']['id'] == 'openai/gpt-4-1106-preview'
+    assert judge['model_info']['developer'] == 'openai'
+    assert judge['temperature'] == 1.0
+    assert judge['additional_details']['completion_parser'] == 'logprob_parser'
+    assert judge['additional_details']['top_logprobs'] == '5'
 
 
 def test_v1_and_v2_use_different_judges_and_prompts():
     v1 = _by_metric(_adapter(v1_rows=[_V1_ROW]).fetch_leaderboard('v1')[0])
     v2 = _by_metric(_adapter(v2_rows=[_V2_ROW]).fetch_leaderboard('v2')[0])
 
-    v1_judge = v1['win_rate'].metric_config.llm_scoring
-    v2_judge = v2['win_rate'].metric_config.llm_scoring
-    assert v1_judge.judges[0].model_info.id == 'openai/gpt-4'
-    assert v1_judge.judges[0].temperature == 0.0
-    assert v1_judge.input_prompt == _V1_JUDGE_PROMPT
-    assert v2_judge.judges[0].model_info.id == 'openai/gpt-4-1106-preview'
-    assert v2_judge.input_prompt == _V2_JUDGE_PROMPT
+    v1_scoring = json.loads(v1['win_rate'].metric_config.additional_details['llm_scoring'])
+    v2_scoring = json.loads(v2['win_rate'].metric_config.additional_details['llm_scoring'])
+    assert v1_scoring['judges'][0]['model_info']['id'] == 'openai/gpt-4'
+    assert v1_scoring['judges'][0]['temperature'] == 0.0
+    assert v1_scoring['input_prompt'] == _V1_JUDGE_PROMPT
+    assert (
+        v2_scoring['judges'][0]['model_info']['id']
+        == 'openai/gpt-4-1106-preview'
+    )
+    assert v2_scoring['input_prompt'] == _V2_JUDGE_PROMPT
 
 
 # ---------------------------------------------------------------------------
@@ -826,7 +830,9 @@ def test_a_count_that_cannot_be_parsed_keeps_its_source_text():
     result = _adapter(
         v1_rows=[dict(_V1_ROW, n_wins='767 (est.)')]
     ).fetch_leaderboard_result('v1')
-    details = _by_metric(result.records[0])['win_rate'].score_details.details
+    details = _by_metric(result.records[0])[
+        'win_rate'
+    ].score_details.additional_details
 
     assert result.failures == []
     assert details['n_wins'] == '767 (est.)'

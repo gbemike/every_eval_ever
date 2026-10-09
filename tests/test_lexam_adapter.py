@@ -1,6 +1,7 @@
 """Unit tests for the LEXam adapter."""
 
 from collections import Counter
+import json
 from pathlib import Path
 
 import pytest
@@ -136,7 +137,9 @@ def test_scores_are_emitted_on_each_metrics_canonical_scale() -> None:
     assert mcq_result.metric_config.max_score == 1.0
     assert mcq_result.metric_config.metric_unit == 'proportion'
     assert (
-        mcq_result.score_details.details['leaderboard_reported_percent']
+        mcq_result.score_details.additional_details[
+            'leaderboard_reported_percent'
+        ]
         == '62.65'
     )
 
@@ -204,11 +207,12 @@ def test_metric_ids_are_registry_canonical() -> None:
 
 
 def test_fetch_leaderboard_open_metric_has_llm_scoring() -> None:
-    llm_scoring = _gpt5_results()[OPEN_EVAL_NAME].metric_config.llm_scoring
+    details = _gpt5_results()[OPEN_EVAL_NAME].metric_config.additional_details
+    llm_scoring = json.loads(details['llm_scoring'])
 
     assert llm_scoring is not None
-    assert len(llm_scoring.judges) == 3
-    assert {judge.model_info.id for judge in llm_scoring.judges} == {
+    assert len(llm_scoring['judges']) == 3
+    assert {judge['model_info']['id'] for judge in llm_scoring['judges']} == {
         'openai/gpt-4o-2024-11-20',
         'deepseek-ai/DeepSeek-V3',
         'Qwen/Qwen3-32B',
@@ -216,23 +220,25 @@ def test_fetch_leaderboard_open_metric_has_llm_scoring() -> None:
 
 
 def test_judge_scoring_records_the_published_prompt_template() -> None:
-    llm_scoring = _gpt5_results()[OPEN_EVAL_NAME].metric_config.llm_scoring
+    details = _gpt5_results()[OPEN_EVAL_NAME].metric_config.additional_details
+    llm_scoring = json.loads(details['llm_scoring'])
 
-    assert '{question_fact}' in llm_scoring.input_prompt
-    assert '{ref_answer}' in llm_scoring.input_prompt
-    assert '{model_answer}' in llm_scoring.input_prompt
+    assert '{question_fact}' in llm_scoring['input_prompt']
+    assert '{ref_answer}' in llm_scoring['input_prompt']
+    assert '{model_answer}' in llm_scoring['input_prompt']
     assert (
         'Act as a Judge'
-        in (llm_scoring.additional_details['judge_system_prompt'])
+        in llm_scoring['additional_details']['judge_system_prompt']
     )
 
 
 def test_judge_scoring_does_not_claim_average_aggregation() -> None:
     """LEXam takes the pointwise minimum; the enum cannot express that."""
-    llm_scoring = _gpt5_results()[OPEN_EVAL_NAME].metric_config.llm_scoring
+    details = _gpt5_results()[OPEN_EVAL_NAME].metric_config.additional_details
+    llm_scoring = json.loads(details['llm_scoring'])
 
-    assert llm_scoring.aggregation_method is None
-    assert llm_scoring.additional_details['aggregation'] == 'pointwise_minimum'
+    assert llm_scoring['aggregation_method'] is None
+    assert llm_scoring['additional_details']['aggregation'] == 'pointwise_minimum'
 
 
 def test_model_identities_are_resolved_not_invented() -> None:
@@ -460,7 +466,7 @@ def test_standard_error_attached_only_when_score_still_matches() -> None:
     assert mcq_uncertainty.standard_error.value == 0.0117
     assert (
         'arXiv'
-        in results[OPEN_EVAL_NAME].score_details.details[
+        in results[OPEN_EVAL_NAME].score_details.additional_details[
             'standard_error_source'
         ]
     )
@@ -478,7 +484,10 @@ def test_standard_error_attached_only_when_score_still_matches() -> None:
     )
     assert open_result.score_details.score == 70.21
     assert open_result.score_details.uncertainty.standard_error is None
-    assert 'standard_error_source' not in open_result.score_details.details
+    assert (
+        'standard_error_source'
+        not in open_result.score_details.additional_details
+    )
 
 
 def test_unmapped_row_is_reported_not_fatal() -> None:

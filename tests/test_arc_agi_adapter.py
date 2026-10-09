@@ -181,7 +181,7 @@ def test_score_and_cost_results_carry_source_fields():
         == 'ARC-AGI-2'
     )
     # Chart-layout fields stay out of the record.
-    assert 'labelOffsetX' not in score_result.score_details.details
+    assert 'labelOffsetX' not in score_result.score_details.additional_details
 
     assert cost_result.evaluation_result_id == 'v2_Semi_Private::cost_per_task'
     assert cost_result.score_details.score == 8.42

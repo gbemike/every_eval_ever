@@ -24,6 +24,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import time
 from dataclasses import asdict, dataclass, field
@@ -697,7 +698,7 @@ def build_evaluation_result(
         )
     score_details: dict = {'score': round(score, 6)}
     if details:
-        score_details['details'] = {
+        score_details['additional_details'] = {
             k: str(v) for k, v in details.items() if v is not None
         }
 
@@ -711,6 +712,7 @@ def build_evaluation_result(
 
     generation_details = {
         'agent_scaffold': row.agent_name,
+        'available_tools': json.dumps(available_tools, sort_keys=True),
         'hal_rank': str(row.rank),
         'verified': str(row.verified),
         'is_pareto': str(row.is_pareto),
@@ -742,11 +744,6 @@ def build_evaluation_result(
         },
         'score_details': score_details,
         'generation_config': {
-            'generation_args': {
-                'agentic_eval_config': {
-                    'available_tools': available_tools,
-                },
-            },
             'additional_details': generation_details,
         },
     }

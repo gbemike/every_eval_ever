@@ -205,8 +205,8 @@ def test_auroc_output_matches_generic_pwc_canonical_contract() -> None:
     assert result.metric_config.additional_details['observed_min'] == '99.49'
     assert result.metric_config.additional_details['observed_max'] == '99.49'
     assert result.score_details.score == pytest.approx(0.9949)
-    assert result.score_details.details['reviewed_source_scale'] == 'percent'
-    assert result.score_details.details['applied_scale_factor'] == '0.01'
+    assert result.score_details.additional_details['reviewed_source_scale'] == 'percent'
+    assert result.score_details.additional_details['applied_scale_factor'] == '0.01'
 
 
 def test_observed_range_is_derived_from_source_rows() -> None:

@@ -233,8 +233,7 @@ def test_best_attempt_policy_discloses_the_selection(tmp_path: Path):
     assert details['attempt_selection'] == 'best'
     assert details['n_attempts_total'] == '2'
     assert details['n_bounties_with_multiple_attempts'] == '1'
-    assert result.score_details.details['total'] == '1'
-    assert result.generation_config.generation_args.max_attempts == 2
+    assert result.score_details.additional_details['total'] == '1'
 
 
 def test_each_execution_yields_one_paired_tool_call(tmp_path: Path):
@@ -351,7 +350,7 @@ def test_startup_failures_are_excluded_without_failing_the_run(tmp_path: Path):
     logs, _kept, _attempts, result = adapter.convert(_args(tmp_path, logs_dir))
 
     assert logs[0].evaluation_results[0].score_details.score == 1.0
-    assert logs[0].evaluation_results[0].score_details.details['total'] == '1'
+    assert logs[0].evaluation_results[0].score_details.additional_details['total'] == '1'
     assert len(result.exclusions) == 1
     assert 'startup failure' in result.exclusions[0].reason
     result.raise_if_incomplete()
@@ -459,13 +458,6 @@ def test_differing_iteration_budgets_are_not_averaged_together(tmp_path: Path):
         for log in logs
     }
     assert len(fingerprints) == 2
-    message_limits = {
-        log.evaluation_results[
-            0
-        ].generation_config.generation_args.eval_limits.message_limit
-        for log in logs
-    }
-    assert message_limits == {10, 40}
 
 
 def test_concurrent_model_commands_keep_distinct_paired_calls(tmp_path: Path):

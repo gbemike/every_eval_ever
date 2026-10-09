@@ -26,10 +26,8 @@ from urllib.parse import urlencode
 import requests
 
 from every_eval_ever.eval_types import (
-    AgenticEvalConfig,
     ConfidenceInterval,
     EvalLibrary,
-    EvalLimits,
     EvaluationLog,
     EvaluationResult,
     EvaluatorRelationship,
@@ -379,32 +377,23 @@ def evaluation_result_id(
 
 
 def make_generation_config(config: dict[str, Any]) -> GenerationConfig:
-    agent_details = stringify_details(
+    additional_details = stringify_details(
         {
             'agent_name': config.get('agentName'),
             'agent_config_id': config.get('agentConfigId'),
+            'timeout_sec': optional_positive_int(config.get('timeoutSec')),
+            'max_steps': optional_positive_int(config.get('maxSteps')),
+            'summary': config.get('summary'),
         }
     )
     return GenerationConfig(
         generation_args=GenerationArgs(
             temperature=optional_float(config.get('temperature')),
             max_tokens=optional_positive_int(config.get('maxTokens')),
-            agentic_eval_config=AgenticEvalConfig(
-                additional_details=agent_details or None,
-            ),
-            eval_limits=EvalLimits(
-                time_limit=optional_positive_int(config.get('timeoutSec')),
-                message_limit=optional_positive_int(config.get('maxSteps')),
-            ),
+            reasoning_effort=config.get('reasoningEffort'),
+            verbosity=config.get('verbosity'),
         ),
-        additional_details=stringify_details(
-            {
-                'reasoning_effort': config.get('reasoningEffort'),
-                'verbosity': config.get('verbosity'),
-                'summary': config.get('summary'),
-            }
-        )
-        or None,
+        additional_details=additional_details or None,
     )
 
 
@@ -445,7 +434,7 @@ def make_metric_result(
         ),
         evaluation_name=evaluation_name,
         source_data=make_source_data(benchmark, base_url),
-        evaluation_timestamp=row.get('evaluatedAt'),
+        evaluation_result_timestamp=row.get('evaluatedAt'),
         metric_config=MetricConfig(
             evaluation_description=(
                 f'{evaluation_name} {metric_name} reported by Mercor for '
@@ -464,7 +453,7 @@ def make_metric_result(
         ),
         score_details=ScoreDetails(
             score=float(value),
-            details={'num_trials': str(row['numTrials'])},
+            additional_details={'num_trials': str(row['numTrials'])},
             uncertainty=uncertainty,
         ),
         generation_config=make_generation_config(config),

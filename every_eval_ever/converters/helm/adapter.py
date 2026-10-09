@@ -631,7 +631,7 @@ class HELMAdapter(BaseEvaluationAdapter):
                             if num_samples
                             else None
                         ),
-                        details={
+                        additional_details={
                             'num_train_trials': str(
                                 stat_count if stat_count is not None else ''
                             ),

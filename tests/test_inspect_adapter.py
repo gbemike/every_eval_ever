@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 pytest.importorskip(
@@ -341,6 +343,25 @@ def test_gaia_eval():
     generation_config = converted_eval.evaluation_results[0].generation_config
     assert generation_config is not None
     assert generation_config.generation_args.max_attempts == 1
+    generation_details = generation_config.additional_details
+    assert generation_details is not None
+
+    available_tools = json.loads(generation_details['available_tools'])
+    assert {'bash', 'python'} <= {tool['name'] for tool in available_tools}
+    bash_tool = next(tool for tool in available_tools if tool['name'] == 'bash')
+    assert bash_tool['parameters'] == {'timeout': 180}
+
+    eval_plan = json.loads(generation_details['eval_plan'])
+    assert eval_plan['name'] == 'plan'
+    assert eval_plan['config'] == {'temperature': '0.5'}
+    plan_steps = [json.loads(step) for step in eval_plan['steps']]
+    assert any(step['solver'] == 'use_tools' for step in plan_steps)
+
+    assert json.loads(generation_details['eval_limits']) == {
+        'time_limit': None,
+        'message_limit': 100,
+        'token_limit': None,
+    }
 
     results = converted_eval.evaluation_results
     assert len(results) > 0
@@ -622,7 +643,7 @@ def test_both_stderrs_prefer_analytic_and_keep_the_bootstrap_value():
     standard_error = result.score_details.uncertainty.standard_error
     assert (standard_error.value, standard_error.method) == (0.05, 'analytic')
     # The bootstrap value is preserved, not silently dropped.
-    assert result.score_details.details['bootstrap_stderr'] == '0.06'
+    assert result.score_details.additional_details['bootstrap_stderr'] == '0.06'
 
 
 def test_a_scorer_reporting_only_dispersion_does_not_repeat_it():
@@ -755,18 +776,14 @@ def test_supplemental_eval_details_fill_only_top_level_fields():
             'generation_config': {
                 'additional_details': {
                     'runner': 'inspect',
-                },
-            },
-            'agentic_eval_config': {
-                'additional_details': {
                     'agent_mode': 'tool_use',
-                }
+                },
             },
             'evaluation_results': [
                 {
                     'evaluation_result_id': 'choice:accuracy',
                     'score_details': {
-                        'details': {
+                        'additional_details': {
                             'notes': ['a', 'b'],
                         }
                     },
@@ -802,17 +819,23 @@ def test_supplemental_eval_details_fill_only_top_level_fields():
     assert result.source_data.additional_details['subset'] == '{"name": "full"}'
 
     assert result.generation_config is not None
-    assert result.generation_config.additional_details == {'runner': 'inspect'}
-    assert result.generation_config.generation_args is not None
-    assert (
-        result.generation_config.generation_args.agentic_eval_config is not None
-    )
-    assert (
-        result.generation_config.generation_args.agentic_eval_config.additional_details
-        == {'agent_mode': 'tool_use'}
-    )
+    generation_details = result.generation_config.additional_details
+    assert generation_details is not None
+    assert generation_details['runner'] == 'inspect'
+    assert generation_details['agent_mode'] == 'tool_use'
+    assert json.loads(generation_details['available_tools']) == []
+    eval_plan = json.loads(generation_details['eval_plan'])
+    assert eval_plan['name'] == 'plan'
+    assert json.loads(eval_plan['steps'][0])['solver'] == 'multiple_choice'
+    assert json.loads(generation_details['eval_limits']) == {
+        'time_limit': None,
+        'message_limit': None,
+        'token_limit': None,
+    }
 
-    assert result.score_details.details == {'notes': '["a", "b"]'}
+    assert result.score_details.additional_details == {
+        'notes': '["a", "b"]'
+    }
 
     # Converter-synthetic defaults are override-eligible.
     assert result.metric_config.lower_is_better is True
@@ -883,7 +906,7 @@ def test_supplemental_eval_details_applies_top_level_score_details():
                 {
                     'evaluation_result_id': 'choice:accuracy',
                     'score_details': {
-                        'details': {
+                        'additional_details': {
                             'matched': 1,
                         },
                     },
@@ -899,7 +922,7 @@ def test_supplemental_eval_details_applies_top_level_score_details():
     )
     result = converted_eval.evaluation_results[0]
 
-    assert result.score_details.details == {'matched': '1'}
+    assert result.score_details.additional_details == {'matched': '1'}
 
 
 def test_supplemental_eval_details_does_not_overwrite_existing_generation_details():
@@ -942,7 +965,7 @@ def test_supplemental_eval_details_does_not_apply_when_evaluation_name_does_not_
             'evaluation_results': [
                 {
                     'evaluation_name': 'some_other_eval - choice',
-                    'score_details': {'details': {'matched': 1}},
+                    'score_details': {'additional_details': {'matched': 1}},
                 }
             ],
         },
@@ -955,7 +978,7 @@ def test_supplemental_eval_details_does_not_apply_when_evaluation_name_does_not_
             metadata_args,
         )
     result = converted_eval.evaluation_results[0]
-    assert result.score_details.details is None
+    assert result.score_details.additional_details is None
     # A supplemental file is hand-written, so a key that selects nothing is a
     # typo the contributor needs to hear about, not a silent no-op.
     assert 'matched no evaluation result' in caplog.text
@@ -972,11 +995,11 @@ def test_supplemental_eval_details_matches_all_results_of_an_evaluation():
             'evaluation_results': [
                 {
                     'evaluation_name': 'inspect_evals/cyse2_vulnerability_exploit',
-                    'score_details': {'details': {'reviewed': 'yes'}},
+                    'score_details': {'additional_details': {'reviewed': 'yes'}},
                 },
                 {
                     'evaluation_result_id': 'vul_exploit_scorer:mean',
-                    'score_details': {'details': {'reviewed': 'separately'}},
+                    'score_details': {'additional_details': {'reviewed': 'separately'}},
                 },
             ],
         },
@@ -989,7 +1012,7 @@ def test_supplemental_eval_details_matches_all_results_of_an_evaluation():
     )
 
     details_by_result_id = {
-        result.evaluation_result_id: result.score_details.details
+        result.evaluation_result_id: result.score_details.additional_details
         for result in converted_eval.evaluation_results
     }
     assert details_by_result_id['vul_exploit_scorer:accuracy'] == {
@@ -1012,7 +1035,9 @@ def test_supplemental_eval_details_fails_on_deprecated_per_result_schema():
                     'match': {
                         'evaluation_result_id': 'choice:accuracy',
                     },
-                    'score_details': {'details': {'matched': 1}},
+                    'score_details': {
+                        'additional_details': {'matched': 1}
+                    },
                 },
             ]
         },
@@ -1043,8 +1068,14 @@ def test_supplemental_eval_details_fails_on_duplicate_key(key_field, key):
         'evaluator_relationship': EvaluatorRelationship.first_party,
         'supplemental_eval_details': {
             'evaluation_results': [
-                {key_field: key, 'score_details': {'details': {'a': 1}}},
-                {key_field: key, 'score_details': {'details': {'b': 2}}},
+                {
+                    key_field: key,
+                    'score_details': {'additional_details': {'a': 1}},
+                },
+                {
+                    key_field: key,
+                    'score_details': {'additional_details': {'b': 2}},
+                },
             ]
         },
     }
@@ -1077,7 +1108,7 @@ def test_supplemental_eval_details_fails_when_one_entry_sets_both_selectors():
                 {
                     'evaluation_result_id': 'choice:accuracy',
                     'evaluation_name': 'inspect_evals/pubmedqa',
-                    'score_details': {'details': {'a': 1}},
+                    'score_details': {'additional_details': {'a': 1}},
                 },
             ]
         },

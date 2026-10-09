@@ -405,7 +405,7 @@ def convert(
                                 metric_config=metric_config,
                                 score_details=ScoreDetails(
                                     score=round(score, 3),
-                                    details={
+                                    additional_details={
                                         'description': str(
                                             cell.get('description', '')
                                         ),
@@ -424,9 +424,9 @@ def convert(
                             if full_eval_name != existing.evaluation_name
                             else f'{full_eval_name} - {tab_name}'
                         )
-                        if existing.score_details.details is None:
-                            existing.score_details.details = {}
-                        existing.score_details.details[detail_key] = json.dumps(
+                        if existing.score_details.additional_details is None:
+                            existing.score_details.additional_details = {}
+                        existing.score_details.additional_details[detail_key] = json.dumps(
                             {
                                 'description': str(cell.get('description', '')),
                                 'tab': tab_name,

@@ -35,8 +35,6 @@ from typing import Any
 from urllib.parse import urlencode
 
 from every_eval_ever.eval_types import (
-    AgenticEvalConfig,
-    AvailableTool,
     EvalLibrary,
     EvaluationLog,
     EvaluationResult,
@@ -328,7 +326,7 @@ def _score_details(
     return ScoreDetails(
         score=_percentage(metrics.get('accuracy'), f'{field_prefix} accuracy'),
         uncertainty=_uncertainty(metrics, field_prefix, trials),
-        details=_details(
+        additional_details=_details(
             {
                 # `trials` and `tasks` are separate numbers here: the
                 # leaderboard's `tasks` field counts attempts, not tasks.
@@ -350,22 +348,20 @@ def _generation_config(
     reasoning_effort: str | None,
     run_dataset: str,
 ) -> GenerationConfig:
+    genconfig_details = {
+        'available_tools': json.dumps([
+            {
+                'name': 'terminal',
+                'description': 'Full terminal/shell access inside the task sandbox',
+            }
+        ])
+    }
     return GenerationConfig(
         generation_args=GenerationArgs(
             # Every published row ran a reasoning model at a named effort. The
             # schema has no typed effort field, so the level itself is kept
             # below rather than folded into this boolean.
             reasoning=bool(reasoning_effort),
-            agentic_eval_config=AgenticEvalConfig(
-                available_tools=[
-                    AvailableTool(
-                        name='terminal',
-                        description=(
-                            'Full terminal/shell access inside the task sandbox'
-                        ),
-                    ),
-                ],
-            ),
             execution_command=(
                 f'harbor run -d {run_dataset} '
                 f'-a "{agent}" -m "{model_name}" -k {TRIALS_PER_TASK}'
@@ -374,8 +370,8 @@ def _generation_config(
         additional_details=_details(
             {
                 'agent_name': agent,
-                'reasoning_effort': reasoning_effort,
                 'trials_per_task': TRIALS_PER_TASK,
+                **genconfig_details
             }
         ),
     )
@@ -410,7 +406,7 @@ def _results(
             evaluation_result_id=f'{evaluation_id}#accuracy',
             evaluation_name=f'terminal-bench-science-{BENCHMARK_VERSION}',
             source_data=source_data,
-            evaluation_timestamp=evaluation_timestamp,
+            evaluation_result_timestamp=evaluation_timestamp,
             metric_config=_metric_config(
                 'Share of trials resolved across '
                 f'{TASK_COUNT} expert-curated scientific research tasks, '
@@ -435,7 +431,7 @@ def _results(
                     f'terminal-bench-science-{BENCHMARK_VERSION}.{name}'
                 ),
                 source_data=source_data,
-                evaluation_timestamp=evaluation_timestamp,
+                evaluation_result_timestamp=evaluation_timestamp,
                 metric_config=_metric_config(
                     f'Share of trials resolved on the {name} subset'
                 ),

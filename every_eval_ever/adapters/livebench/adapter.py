@@ -272,7 +272,7 @@ def _result(
         ),
         score_details=ScoreDetails(
             score=score,
-            details={'aggregation_level': level},
+            additional_details={'aggregation_level': level},
         ),
     )
 

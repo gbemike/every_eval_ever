@@ -1725,7 +1725,7 @@ def make_score_details(
     details.update(provenance_details(score, model))
     return ScoreDetails(
         score=score_value,
-        details=stringify_details(details),
+        additional_details=stringify_details(details),
     )
 
 
@@ -1828,7 +1828,7 @@ def make_evaluation_result(
         evaluation_result_id=f'{benchmark_slug}::{result_id_suffix}',
         evaluation_name=f'llm_stats.{benchmark_slug}',
         source_data=make_source_data(score, model, benchmark, base_url),
-        evaluation_timestamp=str(timestamp)
+        evaluation_result_timestamp=str(timestamp)
         if timestamp not in (None, '')
         else None,
         metric_config=MetricConfig(

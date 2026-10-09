@@ -4,16 +4,13 @@ import re
 from typing import Any, Dict, List, Type
 
 from every_eval_ever.converters.inspect.supplemental_eval_details import (
-    SupplementalAgenticEvalConfig,
     SupplementalEvalDetails,
     SupplementalForEvaluationResults,
     SupplementalGenerationConfig,
     SupplementalSourceData,
 )
 from every_eval_ever.eval_types import (
-    AgenticEvalConfig,
     EvaluationResult,
-    GenerationArgs,
     GenerationConfig,
     InferenceEngine,
     MetricConfig,
@@ -341,9 +338,6 @@ SYNTHETIC_METRIC_CONFIG_FIELDS = {
     "evaluation_description",
     "lower_is_better",
     "score_type",
-    "level_names",
-    "level_metadata",
-    "has_unknown_level",
     "min_score",
     "max_score",
     "metric_id",
@@ -414,11 +408,7 @@ def apply_model_info_supplement(
 def apply_generation_config_supplement(
     evaluation_result: EvaluationResult,
     generation_supplement: SupplementalGenerationConfig | None,
-    agentic_supplement: SupplementalAgenticEvalConfig | None,
 ) -> None:
-    if generation_supplement is None and agentic_supplement is None:
-        return
-
     if evaluation_result.generation_config is None:
         evaluation_result.generation_config = GenerationConfig()
 
@@ -428,22 +418,6 @@ def apply_generation_config_supplement(
             generation_config.additional_details,
             generation_supplement.additional_details,
         )
-
-    if agentic_supplement is None:
-        return
-
-    if generation_config.generation_args is None:
-        generation_config.generation_args = GenerationArgs()
-
-    if generation_config.generation_args.agentic_eval_config is None:
-        generation_config.generation_args.agentic_eval_config = AgenticEvalConfig()
-
-    generation_config.generation_args.agentic_eval_config.additional_details = (
-        extend_additional_details(
-            generation_config.generation_args.agentic_eval_config.additional_details,
-            agentic_supplement.additional_details,
-        )
-    )
 
 
 def apply_source_data_supplement(
@@ -494,9 +468,9 @@ def apply_result_supplement(
         return
 
     if supplement.score_details is not None:
-        evaluation_result.score_details.details = extend_additional_details(
-            evaluation_result.score_details.details,
-            supplement.score_details.details,
+        evaluation_result.score_details.additional_details = extend_additional_details(
+            evaluation_result.score_details.additional_details,
+            supplement.score_details.additional_details,
         )
 
     apply_metric_config_supplement(evaluation_result, supplement)
@@ -582,7 +556,6 @@ def apply_supplemental_eval_details(
         apply_generation_config_supplement(
             evaluation_result,
             supplemental_eval_details.generation_config,
-            supplemental_eval_details.agentic_eval_config,
         )
 
     result_supplements = supplemental_eval_details.evaluation_results or []

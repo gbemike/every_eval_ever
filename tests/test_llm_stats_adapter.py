@@ -161,7 +161,7 @@ def test_raw_citation_and_provenance_are_preserved():
     logs = logs_by_relationship()
 
     first_result = logs['first_party'].evaluation_results[0]
-    first_details = first_result.score_details.details or {}
+    first_details = first_result.score_details.additional_details or {}
     assert first_details['raw_provenance_label'] == 'model_card'
     assert first_details['raw_verified'] == 'true'
     assert first_details['raw_source_organization'] == 'openai'
@@ -179,7 +179,7 @@ def test_raw_citation_and_provenance_are_preserved():
     assert first_result.metric_config.max_score == 100
 
     other_result = logs['other'].evaluation_results[0]
-    other_details = other_result.score_details.details or {}
+    other_details = other_result.score_details.additional_details or {}
     assert other_details['raw_provenance_label'] == 'unknown'
     assert other_details['relationship_inference_reason'] == (
         'no_provenance_signal'
@@ -284,14 +284,14 @@ def test_aa_omniscience_normalizes_mixed_live_scores_and_validates(
         assert evaluation_result.metric_config.max_score == 100
         assert evaluation_result.metric_config.metric_unit == 'points'
 
-    assert grok.score_details.details['raw_score'] == '126'
-    assert grok.score_details.details['raw_normalized_score'] == '0.63'
-    assert grok.score_details.details['transformation_strategy'] == (
+    assert grok.score_details.additional_details['raw_score'] == '126'
+    assert grok.score_details.additional_details['raw_normalized_score'] == '0.63'
+    assert grok.score_details.additional_details['transformation_strategy'] == (
         'normalized_score_to_signed_range'
     )
-    assert liquid.score_details.details['raw_score'] == '-29.5'
-    assert liquid.score_details.details['raw_normalized_score'] == 'null'
-    assert liquid.score_details.details['transformation_strategy'] == (
+    assert liquid.score_details.additional_details['raw_score'] == '-29.5'
+    assert liquid.score_details.additional_details['raw_normalized_score'] == 'null'
+    assert liquid.score_details.additional_details['transformation_strategy'] == (
         'self_reported_signed_raw_score'
     )
 

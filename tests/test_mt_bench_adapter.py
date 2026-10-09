@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from every_eval_ever.adapters.mt_bench import adapter
 from every_eval_ever.eval_types import EvaluationLog
 
@@ -119,9 +121,10 @@ def test_metric_config_uses_one_to_ten_scale():
     assert overall.metric_config.lower_is_better is False
     assert overall.metric_config.metric_kind == 'judge_score'
     assert overall.metric_config.metric_unit == 'points'
-    assert overall.metric_config.llm_scoring is not None
-    judge = overall.metric_config.llm_scoring.judges[0]
-    assert judge.model_info.id == 'openai/gpt-4'
+    scoring = json.loads(
+        overall.metric_config.additional_details['llm_scoring']
+    )
+    assert scoring['judges'][0]['model_info']['id'] == 'openai/gpt-4'
 
 
 def test_developer_overrides_used_for_fastchat_models():
@@ -183,10 +186,9 @@ def test_judge_model_not_duplicated_in_additional_details():
             source_extras = result.source_data.additional_details or {}
             assert 'judge_model' not in source_extras
             assert 'judge_models_json' not in source_extras
-            # Sanity: judge IS in the prescribed slot.
-            judges = result.metric_config.llm_scoring.judges
-            assert len(judges) == 1
-            assert judges[0].model_info.id == 'openai/gpt-4'
+            scoring = json.loads(metric_extras['llm_scoring'])
+            assert len(scoring['judges']) == 1
+            assert scoring['judges'][0]['model_info']['id'] == 'openai/gpt-4'
 
 
 def test_judge_prompt_templates_appear_only_once():

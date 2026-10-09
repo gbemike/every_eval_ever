@@ -223,7 +223,7 @@ def test_evaluation_name_is_the_benchmark_and_the_metric_is_named():
         for result in results
     )
     assert {
-        result.score_details.details['perturbation'] for result in results
+        result.score_details.additional_details['perturbation'] for result in results
     } == {'', 'robustness', 'fairness'}
 
 
@@ -265,7 +265,7 @@ def test_num_samples_counts_instances_not_train_trials():
         result.score_details.uncertainty.num_samples for result in results
     } == {10}
     assert {
-        result.score_details.details['num_train_trials'] for result in results
+        result.score_details.additional_details['num_train_trials'] for result in results
     } == {'1'}
 
 
@@ -289,7 +289,7 @@ def test_num_samples_follows_the_split_a_score_was_computed_on():
 
     by_split = {}
     for result in converted_eval.evaluation_results:
-        details = result.score_details.details
+        details = result.score_details.additional_details
         by_split.setdefault(
             (details['split'], bool(details['perturbation'])), set()
         ).add(result.score_details.uncertainty.num_samples)
@@ -328,7 +328,7 @@ def test_helm_spread_is_not_the_schemas_standard_deviation():
         for result in converted_eval.evaluation_results
     )
     assert {
-        result.score_details.details['stddev_across_train_trials']
+        result.score_details.additional_details['stddev_across_train_trials']
         for result in converted_eval.evaluation_results
     } == {'0.0'}
 
@@ -357,7 +357,7 @@ def test_multi_trial_spread_is_still_reported_as_a_trial_spread():
 
     for result in converted_eval.evaluation_results:
         assert result.score_details.uncertainty.standard_deviation is None
-        details = result.score_details.details
+        details = result.score_details.additional_details
         assert details['num_train_trials'] == '3'
         assert details['stddev_across_train_trials'] == '0.05'
         # The samples behind the score are unaffected by how many trials it took.
@@ -398,7 +398,7 @@ def test_sample_count_survives_a_run_without_per_instance_stats():
 
     by_split = {}
     for result in converted_eval.evaluation_results:
-        by_split.setdefault(result.score_details.details['split'], set()).add(
+        by_split.setdefault(result.score_details.additional_details['split'], set()).add(
             result.score_details.uncertainty.num_samples
         )
 

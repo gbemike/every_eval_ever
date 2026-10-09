@@ -27,8 +27,6 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 
 from every_eval_ever.eval_types import (
-    AgenticEvalConfig,
-    AvailableTool,
     ConfidenceInterval,
     EvalLibrary,
     EvaluationLog,
@@ -125,7 +123,7 @@ TB2 = VERSIONS_BY_KEY['2.0']
 #: ``pass_at_<k>`` metrics, published by some versions on a 0-1 scale.
 PASS_AT_KEY = re.compile(r'^pass_at_(\d+)$')
 
-#: Row metrics kept verbatim in ``score_details.details`` when published.
+#: Row metrics kept verbatim in ``score_details.additional_details`` when published.
 DETAIL_METRICS = (
     'n_trials',
     'successes',
@@ -441,6 +439,15 @@ def convert_entry(
     if spec.trials_per_task:
         execution_command += f' -k {spec.trials_per_task}'
 
+    genconfig_details = {
+        'available_tools': json.dumps([
+            {
+                'name': 'terminal',
+                'description': 'Full terminal/shell access',
+            }
+        ])
+    }
+
     eval_result = EvaluationResult(
         evaluation_result_id=f'{eval_id}#accuracy',
         evaluation_name=spec.collection,
@@ -449,7 +456,7 @@ def convert_entry(
             source_type='url',
             url=[leaderboard_url],
         ),
-        evaluation_timestamp=date,
+        evaluation_result_timestamp=date,
         metric_config=MetricConfig(
             evaluation_description=description,
             # Namespaced, not the registry's `accuracy`: this is a share of
@@ -466,21 +473,15 @@ def convert_entry(
         ),
         score_details=ScoreDetails(
             score=accuracy,
-            details=entry.get('details') or None,
+            additional_details=entry.get('details') or None,
             uncertainty=uncertainty,
         ),
         generation_config=GenerationConfig(
             generation_args=GenerationArgs(
-                agentic_eval_config=AgenticEvalConfig(
-                    available_tools=[
-                        AvailableTool(
-                            name='terminal',
-                            description='Full terminal/shell access',
-                        ),
-                    ],
-                ),
                 execution_command=execution_command,
+                reasoning_effort=entry.get('reasoning_effort'),
             ),
+        additional_details=genconfig_details,
         ),
     )
 
@@ -496,9 +497,6 @@ def convert_entry(
             f'Terminal-Bench agent organization for rank {entry.get("rank")!r}',
         ),
     }
-    if entry.get('reasoning_effort'):
-        additional_details['reasoning_effort'] = str(entry['reasoning_effort'])
-
     return EvaluationLog(
         schema_version=SCHEMA_VERSION,
         evaluation_id=eval_id,
@@ -545,7 +543,7 @@ def _pass_at_result(
             source_type='url',
             url=[leaderboard_url],
         ),
-        evaluation_timestamp=date,
+        evaluation_result_timestamp=date,
         metric_config=MetricConfig(
             evaluation_description=(
                 f'Share of tasks solved in at least one of {k} trials on '

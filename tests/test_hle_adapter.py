@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from every_eval_ever.adapters.hle import adapter
 from every_eval_ever.eval_types import EvaluationLog
 
@@ -155,8 +157,10 @@ def test_metric_config_uses_percent_scale_with_judge():
     assert accuracy.metric_config.max_score == 100.0
     assert accuracy.metric_config.metric_unit == 'percent'
     assert accuracy.metric_config.lower_is_better is False
-    judge = accuracy.metric_config.llm_scoring.judges[0]
-    assert judge.model_info.id == adapter.JUDGE_MODEL_ID
+    scoring = json.loads(
+        accuracy.metric_config.additional_details['llm_scoring']
+    )
+    assert scoring['judges'][0]['model_info']['id'] == adapter.JUDGE_MODEL_ID
 
 
 def test_generation_config_carries_model_temperature():
@@ -186,6 +190,7 @@ def test_judge_and_temperature_not_duplicated_in_additional_details():
         for result in log.evaluation_results:
             metric_extras = result.metric_config.additional_details or {}
             assert 'judge_model' not in metric_extras
+            assert 'llm_scoring' in metric_extras
             assert 'temperature' not in metric_extras
             source_extras = result.source_data.additional_details or {}
             assert 'judge_model' not in source_extras

@@ -52,7 +52,8 @@ def test_make_bundles_maps_all_metrics_and_validates():
 
     pass_at_1 = find_result('Overall', 'pass_at_k', {'k': 1})
     assert pass_at_1.score_details.score == 0.24
-    assert pass_at_1.score_details.uncertainty.num_samples == 480
+    assert pass_at_1.evaluation_result_timestamp == log.evaluation_timestamp
+    assert 'num_trials' in pass_at_1.score_details.additional_details
     assert (
         pass_at_1.score_details.uncertainty.confidence_interval.lower == 0.208
     )
@@ -84,24 +85,16 @@ def test_make_bundles_preserves_run_configuration():
     bundle = make_fixture_bundles()[0]
     result = bundle.log.evaluation_results[0]
     args = result.generation_config.generation_args
+    details = result.generation_config.additional_details
 
     assert args.temperature == 1.0
     assert args.max_tokens == 65536
-    assert args.eval_limits.time_limit == 10800
-    assert args.eval_limits.message_limit == 250
-    assert (
-        args.agentic_eval_config.additional_details['agent_name']
-        == 'ReAct Toolbelt Agent'
-    )
-    assert (
-        args.agentic_eval_config.additional_details['agent_config_id']
-        == 'react_toolbelt_agent'
-    )
-    assert (
-        result.generation_config.additional_details['reasoning_effort']
-        == 'high'
-    )
-    assert result.generation_config.additional_details['verbosity'] == 'medium'
+    assert args.reasoning_effort == 'high'
+    assert args.verbosity == 'medium'
+    assert details['agent_name'] == 'ReAct Toolbelt Agent'
+    assert details['agent_config_id'] == 'react_toolbelt_agent'
+    assert details['timeout_sec'] == '10800'
+    assert details['max_steps'] == '250'
 
 
 def test_source_and_evaluation_metadata_are_preserved():

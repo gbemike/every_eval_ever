@@ -98,21 +98,27 @@ def test_overall_and_five_domains_each_carry_their_own_n(payload, tmp_path):
     ]
 
     overall, *domains = log.evaluation_results
-    assert overall.score_details.details['aggregation_level'] == 'overall'
+    assert overall.score_details.additional_details[
+        'aggregation_level'
+    ] == 'overall'
     assert overall.score_details.uncertainty.num_samples == 210
     # The parts sum to the whole, so a consumer that took both would
     # double-count; each result says which level it is.
     assert (
-        sum(int(domain.score_details.details['trials']) for domain in domains)
+        sum(
+            int(domain.score_details.additional_details['trials'])
+            for domain in domains
+        )
         == 210
     )
     assert sum(
-        int(domain.score_details.details['trials_passed']) for domain in domains
-    ) == int(overall.score_details.details['trials_passed'])
+        int(domain.score_details.additional_details['trials_passed'])
+        for domain in domains
+    ) == int(overall.score_details.additional_details['trials_passed'])
     for domain in domains:
-        assert domain.score_details.details['aggregation_level'].startswith(
-            'domain:'
-        )
+        assert domain.score_details.additional_details[
+            'aggregation_level'
+        ].startswith('domain:')
 
 
 def test_published_standard_error_is_the_binomial_one(payload, tmp_path):

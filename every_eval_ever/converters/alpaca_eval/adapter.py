@@ -40,8 +40,6 @@ from every_eval_ever.eval_types import (
     GenerationArgs,
     GenerationConfig,
     InferenceEngine,
-    JudgeConfig,
-    LlmScoring,
     MetricConfig,
     ModelInfo,
     ScoreDetails,
@@ -447,7 +445,7 @@ def _judge_model_info(board: LeaderboardSnapshot, annotator: str) -> ModelInfo:
 
 def _llm_scoring(
     board: LeaderboardSnapshot, cfg: Dict[str, Any], ref: str
-) -> LlmScoring:
+) -> Dict[str, Any]:
     """Build ``llm_scoring`` for the judge-scored metrics of one leaderboard.
 
     ``aggregation_method`` is deliberately left unset: there is one judge per
@@ -470,16 +468,18 @@ def _llm_scoring(
         'max_tokens': kwargs.get('max_tokens'),
         'top_logprobs': kwargs.get('top_logprobs'),
     }
-    return LlmScoring(
-        judges=[
-            JudgeConfig(
-                model_info=_judge_model_info(board, annotator),
-                temperature=_to_float(kwargs.get('temperature')),
-                additional_details=_stringify(judge_details),
-            )
+    return {
+        'judges': [
+            {
+                'model_info': _judge_model_info(board, annotator).model_dump(
+                    mode='json', exclude_none=True
+                ),
+                'temperature': _to_float(kwargs.get('temperature')),
+                'additional_details': _stringify(judge_details),
+            }
         ],
-        input_prompt=board.judge_prompt,
-        additional_details=_stringify(
+        'input_prompt': board.judge_prompt,
+        'additional_details': _stringify(
             {
                 'baseline_model': cfg['baseline'],
                 'preference_rule': cfg['preference_rule'],
@@ -487,14 +487,14 @@ def _llm_scoring(
                 'prompt_template_url': blob_url(board.judge_prompt_path, ref),
             }
         ),
-    )
+    }
 
 
 def _metric_config(
     metric: _ResolvedMetric,
     cfg: Dict[str, Any],
     benchmark: registry_mod.Resolution,
-    llm_scoring: Optional[LlmScoring],
+    llm_scoring: Optional[Dict[str, Any]],
     samples: int,
 ) -> MetricConfig:
     """Build ``metric_config`` for one metric of one leaderboard row.
@@ -526,7 +526,6 @@ def _metric_config(
         score_type=ScoreType.continuous,
         min_score=metric.min_score,
         max_score=metric.max_score,
-        llm_scoring=llm_scoring if spec.judge_scored else None,
         additional_details=_stringify(
             {
                 'source_column': spec.column,
@@ -539,6 +538,7 @@ def _metric_config(
                     if spec.judge_scored
                     else 'not a quality metric: neither direction is better'
                 ),
+                'llm_scoring': llm_scoring if spec.judge_scored else None,
                 **metric.resolution.provenance('metric'),
                 **benchmark.provenance('benchmark'),
             }
@@ -580,7 +580,7 @@ def _score_details(
             {column: _cell(row, column) for column in _COUNT_COLUMNS}
         )
     return ScoreDetails(
-        score=score, uncertainty=uncertainty, details=_stringify(details)
+        score=score, uncertainty=uncertainty, additional_details=_stringify(details)
     )
 
 

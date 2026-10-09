@@ -601,20 +601,20 @@ def make_score_details(
     spec: MetricSpec,
     score: float,
 ) -> ScoreDetails:
-    details: dict[str, str] = {
+    additional_details: dict[str, str] = {
         'raw_model_id': stringify(model['id']),
     }
 
     if spec.source_section == 'model':
-        details['raw_value_field'] = spec.source_key
+        additional_details['raw_value_field'] = spec.source_key
     else:
-        details['raw_value_field'] = f'{spec.source_section}.{spec.source_key}'
+        additional_details['raw_value_field'] = f'{spec.source_section}.{spec.source_key}'
 
     uncertainty = maybe_make_uncertainty(model, spec)
 
     return ScoreDetails(
         score=score,
-        details=details,
+        additional_details=additional_details,
         uncertainty=uncertainty,
     )
 

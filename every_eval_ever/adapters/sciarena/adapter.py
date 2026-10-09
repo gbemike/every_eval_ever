@@ -164,7 +164,7 @@ def make_results(
             },
             "score_details": {
                 "score": float(row["rating"]),
-                "details": {
+                "additonal_details": {
                     "num_battles": str(row["num_battles"]),
                     "rating_q025": str(row["rating_q025"]),
                     "rating_q975": str(row["rating_q975"]),

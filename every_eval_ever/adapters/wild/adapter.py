@@ -272,7 +272,10 @@ def _result(task: str, subtask: str | None, agg: Agg) -> EvaluationResult:
         ),
         score_details=ScoreDetails(
             score=accuracy,
-            details={'n_items': str(agg.n), 'n_correct': str(int(agg.correct))},
+            additional_details={
+                'n_items': str(agg.n),
+                'n_correct': str(int(agg.correct)),
+            },
             uncertainty={'standard_error': {'value': se, 'method': 'analytic'},
                          'num_samples': agg.n},
         ),

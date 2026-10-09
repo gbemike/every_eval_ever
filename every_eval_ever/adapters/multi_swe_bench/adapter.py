@@ -30,13 +30,10 @@ from every_eval_ever.adapters.swe_helpers import (
     parse_model_from_dir,
 )
 from every_eval_ever.eval_types import (
-    AgenticEvalConfig,
-    AvailableTool,
     EvalLibrary,
     EvaluationLog,
     EvaluationResult,
     EvaluatorRelationship,
-    GenerationArgs,
     GenerationConfig,
     MetricConfig,
     ModelInfo,
@@ -143,6 +140,11 @@ def convert_submission(
     dataset_label = f'Multi-SWE-bench ({lang})'
     eval_name = f'Multi-SWE-Bench ({lang})'
 
+    genconfig_details = {
+        'agent': agent,
+        'available_tools': json.dumps([{'name': 'bash'}]),
+    }
+    
     eval_result = EvaluationResult(
         evaluation_name=eval_name,
         source_data=SourceDataUrl(
@@ -152,7 +154,7 @@ def convert_submission(
                 'https://huggingface.co/datasets/ByteDance-Seed/Multi-SWE-bench'
             ],
         ),
-        evaluation_timestamp=evaluation_timestamp,
+        evaluation_result_timestamp=evaluation_timestamp,
         metric_config=MetricConfig(
             evaluation_description=f'Fraction of {lang} GitHub issues resolved (0.0–1.0)',
             lower_is_better=False,
@@ -162,14 +164,10 @@ def convert_submission(
         ),
         score_details=ScoreDetails(
             score=score,
-            details=score_details,
+            additional_details=score_details,
         ),
         generation_config=GenerationConfig(
-            generation_args=GenerationArgs(
-                agentic_eval_config=AgenticEvalConfig(
-                    available_tools=[AvailableTool(name='bash')],
-                ),
-            ),
+            additional_details=genconfig_details
         ),
     )
 

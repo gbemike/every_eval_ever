@@ -508,7 +508,7 @@ def test_additional_details_are_all_strings():
         for d in (b.log.model_info.additional_details or {}).values():
             assert isinstance(d, str)
         for r in b.log.evaluation_results:
-            for d in (r.score_details.details or {}).values():
+            for d in (r.score_details.additional_details or {}).values():
                 assert isinstance(d, str)
 
 
@@ -689,7 +689,7 @@ def test_group_scale_applied_consistently_in_build():
     a = by_model['ModelA'].log.evaluation_results[0].score_details
     b = by_model['ModelB'].log.evaluation_results[0].score_details
     assert round(a.score, 10) == 0.95 and round(b.score, 10) == 0.01
-    assert b.details['rescale_basis'] == 'group_uniform'
+    assert b.additional_details['rescale_basis'] == 'group_uniform'
 
 
 def test_resolver_unbounded_canonical_emits_inf():
@@ -715,8 +715,8 @@ def test_accuracy_rescaled_to_canonical_in_build():
         assert 0.0 <= r.score_details.score <= 1.0
         # singleton board (one Accuracy row) with a value impossible under [0,1]:
         # fixed per-row by /100 (multiplier 0.01), raw kept in raw_value.
-        assert r.score_details.details.get('canonical_rescale_factor') == '0.01'
-        assert r.score_details.details.get('rescale_basis') == 'per_row'
+        assert r.score_details.additional_details.get('canonical_rescale_factor') == '0.01'
+        assert r.score_details.additional_details.get('rescale_basis') == 'per_row'
 
 
 def test_resolver_unresolved_is_recorded_and_falls_back():
@@ -899,11 +899,11 @@ def test_reported_uncertainty_kept_as_text_not_typed_se():
     )
     # the '±' spread is untyped in the source, so no typed Uncertainty is asserted
     assert sd.uncertainty is None
-    assert sd.details['reported_uncertainty'] == '0.82'
+    assert sd.additional_details['reported_uncertainty'] == '0.82'
     # no spread -> the key is simply absent (not an empty/None value)
     sd2 = adapter.score_details({'id': '2'}, '0.5', 0.5, None, {}, None)
     assert sd2.uncertainty is None
-    assert 'reported_uncertainty' not in sd2.details
+    assert 'reported_uncertainty' not in sd2.additional_details
 
 
 def test_a_rescaled_score_carries_its_spread_on_the_same_scale():
@@ -924,10 +924,10 @@ def test_a_rescaled_score_carries_its_spread_on_the_same_scale():
         {'canonical_rescale_factor': 0.01, 'rescale_basis': 'group_uniform'},
     )
 
-    assert sd.details['reported_uncertainty'] == '0.82'
+    assert sd.additional_details['reported_uncertainty'] == '0.82'
     # Compared as a number, not a string: the multiply is left exact, the same
     # way the rescaled score is, so the repr can carry a float artifact.
-    assert float(sd.details['reported_uncertainty_canonical']) == pytest.approx(
+    assert float(sd.additional_details['reported_uncertainty_canonical']) == pytest.approx(
         0.0082
     )
 
@@ -936,8 +936,8 @@ def test_an_unrescaled_score_does_not_repeat_its_spread():
     """Repeating an unchanged figure under a second key only invites drift."""
     sd = adapter.score_details({'id': '1'}, '0.337 ± 0.0082', 0.337, '0.0082', {}, None)
 
-    assert sd.details['reported_uncertainty'] == '0.0082'
-    assert 'reported_uncertainty_canonical' not in sd.details
+    assert sd.additional_details['reported_uncertainty'] == '0.0082'
+    assert 'reported_uncertainty_canonical' not in sd.additional_details
 
 
 def test_a_spread_that_is_not_a_bare_number_is_left_alone():
@@ -952,8 +952,8 @@ def test_a_spread_that_is_not_a_bare_number_is_left_alone():
         {'canonical_rescale_factor': 0.01},
     )
 
-    assert sd.details['reported_uncertainty'] == '0.3 (n=5)'
-    assert 'reported_uncertainty_canonical' not in sd.details
+    assert sd.additional_details['reported_uncertainty'] == '0.3 (n=5)'
+    assert 'reported_uncertainty_canonical' not in sd.additional_details
 
 
 def test_source_metadata_provenance_reflects_source():

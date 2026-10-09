@@ -901,7 +901,7 @@ def score_details(
         # `reported_uncertainty` (and within `raw_value`) for downstream
         # interpretation.
         uncertainty=None,
-        details=stringify_details(
+        additional_details=stringify_details(
             {
                 **(scale_detail or {}),
                 'raw_value': raw_value,
@@ -999,7 +999,7 @@ def build_results(
                 evaluation_result_id=f'{SRC}.{ev.get("id")}.{snake(mname)}',
                 evaluation_name=eval_name,
                 source_data=src_data,
-                evaluation_timestamp=str(ts) if ts else None,
+                evaluation_result_timestamp=str(ts) if ts else None,
                 metric_config=build_metric_config(
                     mname, resolved, obs_range, metric_meta.get(mname)
                 ),

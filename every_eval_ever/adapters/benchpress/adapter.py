@@ -461,9 +461,9 @@ def _generation_config(reported: dict) -> GenerationConfig | None:
     elif mode == 'non-thinking':
         args['reasoning'] = False
     tools = reported.get('tools')
-    if tools in _TOOL_TOKENS:
-        args['agentic_eval_config'] = {'available_tools': _TOOL_TOKENS[tools]}
+
     details = _str_map({
+        'available_tools': _TOOL_TOKENS[tools] if tools in _TOOL_TOKENS else {},
         'effort': reported.get('effort'), 'context': reported.get('context'),
         'prompt_style': reported.get('prompt_style'), 'mode': mode,
         'system_type': reported.get('system_type'),
@@ -547,7 +547,7 @@ def make_evaluation_result(score: dict, benchmark: dict) -> EvaluationResult | N
         ),
         score_details=ScoreDetails(
             score=value,
-            details=_str_map({
+            additional_details=_str_map({
                 'benchpress_source_type': score.get('source_type'),
                 'reference_url': ref_url,
                 'audit_status': score.get('audit_status'),

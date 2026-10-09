@@ -316,7 +316,7 @@ def make_result(task: str, metrics: dict, eval_ts_iso: str | None) -> Evaluation
 
     score_details = ScoreDetails(
         score=score,
-        details=clean_details(
+        additional_details=clean_details(
             {
                 "raw_metric_key": "acc,none",
                 "acc_norm": metrics.get("acc_norm,none"),
@@ -330,7 +330,7 @@ def make_result(task: str, metrics: dict, eval_ts_iso: str | None) -> Evaluation
     return EvaluationResult(
         evaluation_result_id=f"{SRC}.{task}",
         evaluation_name=f"{SRC}.{task}",
-        evaluation_timestamp=eval_ts_iso,
+        evaluation_result_timestamp=eval_ts_iso,
         source_data=SourceDataHf(
             dataset_name=display,
             source_type="hf_dataset",
@@ -394,7 +394,7 @@ def make_log(
     eval_dt = parse_ts(path)
     eval_ts_iso = eval_dt.isoformat() if eval_dt else None
     for r in ev_results:
-        r.evaluation_timestamp = eval_ts_iso
+        r.evaluation_result_timestamp = eval_ts_iso
 
     if eval_dt:
         base = int(eval_dt.timestamp())

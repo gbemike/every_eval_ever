@@ -300,7 +300,7 @@ def build_result(
             dataset_name=dataset_name,
             source_type="other",
         ),
-        evaluation_timestamp=source_timestamp(source_path),
+        evaluation_result_timestamp=source_timestamp(source_path),
         metric_config=MetricConfig(
             evaluation_description=spec.description,
             metric_id=spec.metric_id,
@@ -316,7 +316,7 @@ def build_result(
         ),
         score_details=ScoreDetails(
             score=score,
-            details={"source_value_unit": spec.metric_unit},
+            additional_details={"source_value_unit": spec.metric_unit},
         ),
     )
 

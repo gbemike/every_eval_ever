@@ -27,13 +27,10 @@ from pathlib import Path
 
 from every_eval_ever.adapters.swe_helpers import parse_date_from_dir
 from every_eval_ever.eval_types import (
-    AgenticEvalConfig,
-    AvailableTool,
     EvalLibrary,
     EvaluationLog,
     EvaluationResult,
     EvaluatorRelationship,
-    GenerationArgs,
     GenerationConfig,
     MetricConfig,
     ModelInfo,
@@ -193,6 +190,9 @@ def convert_submission(
     eval_id = f'swe-bench-verified/{sanitized_id}/{submission_slug}/{retrieved_timestamp}'
     evaluation_timestamp = parse_date_from_dir(dir_name)
 
+    genconfig_details = {
+        'available_tools': json.dumps([{'name': 'bash'}]),
+    }
     eval_result = EvaluationResult(
         evaluation_name='SWE-bench Verified',
         source_data=SourceDataUrl(
@@ -200,7 +200,7 @@ def convert_submission(
             source_type='url',
             url=['https://www.swebench.com'],
         ),
-        evaluation_timestamp=evaluation_timestamp,
+        evaluation_result_timestamp=evaluation_timestamp,
         metric_config=MetricConfig(
             evaluation_description=(
                 'Fraction of 500 verified GitHub issues resolved (0.0–1.0)'
@@ -212,14 +212,10 @@ def convert_submission(
         ),
         score_details=ScoreDetails(
             score=score,
-            details=score_details,
+            additional_details=score_details,
         ),
         generation_config=GenerationConfig(
-            generation_args=GenerationArgs(
-                agentic_eval_config=AgenticEvalConfig(
-                    available_tools=[AvailableTool(name='bash')],
-                ),
-            ),
+            additional_details=genconfig_details
         ),
     )
 

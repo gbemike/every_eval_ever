@@ -50,8 +50,6 @@ from every_eval_ever.eval_types import (
     EvaluatorRelationship,
     GenerationArgs,
     GenerationConfig,
-    JudgeConfig,
-    LlmScoring,
     MetricConfig,
     ModelInfo,
     ScoreDetails,
@@ -91,6 +89,18 @@ JUDGE_PROMPT_DESCRIPTION = (
     'frozen questions.'
 )
 DATASET_TOTAL_QUESTIONS = 2500
+
+
+def _judge_details(judge_model_info: ModelInfo) -> str:
+    return json.dumps(
+        {
+            'judges': [
+                {'model_info': judge_model_info.model_dump(mode='json')}
+            ],
+            'input_prompt': JUDGE_PROMPT_DESCRIPTION,
+        },
+        sort_keys=True,
+    )
 
 # Map the leaderboard's lowercase company slug to the canonical developer
 # slug used elsewhere in the EEE data tree (matches helpers/developer.py
@@ -350,7 +360,7 @@ def make_accuracy_result(
     score_details_kwargs: dict[str, Any] = {'score': score}
     if uncertainty is not None:
         score_details_kwargs['uncertainty'] = uncertainty
-    score_details_kwargs['details'] = {
+    score_details_kwargs['additional_details'] = {
         'rank': str(row.raw.get('rank')),
         'max_score_observed': str(row.raw.get('maxScore')),
     }
@@ -374,12 +384,9 @@ def make_accuracy_result(
             score_type=ScoreType.continuous,
             min_score=0.0,
             max_score=100.0,
-            llm_scoring=LlmScoring(
-                judges=[JudgeConfig(model_info=judge_model_info)],
-                input_prompt=JUDGE_PROMPT_DESCRIPTION,
-            ),
             additional_details={
                 'aggregation': 'accuracy_over_full_dataset',
+                'llm_scoring': _judge_details(judge_model_info),
             },
         ),
         score_details=ScoreDetails(**score_details_kwargs),
@@ -411,10 +418,9 @@ def make_calibration_result(
             score_type=ScoreType.continuous,
             min_score=0.0,
             max_score=100.0,
-            llm_scoring=LlmScoring(
-                judges=[JudgeConfig(model_info=judge_model_info)],
-                input_prompt=JUDGE_PROMPT_DESCRIPTION,
-            ),
+            additional_details={
+                'llm_scoring': _judge_details(judge_model_info),
+            },
         ),
         score_details=ScoreDetails(score=row.calibration_error),
         generation_config=make_generation_config(),

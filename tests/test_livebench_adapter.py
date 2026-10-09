@@ -88,7 +88,7 @@ def test_rows_become_task_category_and_overall_results(converted):
     )
     assert 'livebench/instruction_following' in scores
     levels = {
-        result.evaluation_name: result.score_details.details[
+        result.evaluation_name: result.score_details.additional_details[
             'aggregation_level'
         ]
         for result in log.evaluation_results

@@ -27,7 +27,6 @@ import time
 from pathlib import Path
 
 from every_eval_ever.eval_types import (
-    AgenticEvalConfig,
     EvalLibrary,
     EvaluationLog,
     EvaluationResult,
@@ -380,28 +379,22 @@ def make_generation_config(
     row_meta: dict[str, str],
     benchmark_version: str,
 ) -> GenerationConfig:
-    agent_details = {
-        'agent_label': agent_label,
-        'agent_name': row_meta['agent_name'],
-        'agent_framework': row_meta['agent_framework'],
+    additional_details={
+        'benchmark_name': 'CocoaBench',
         'benchmark_version': benchmark_version,
+        "agent_label": agent_label,
+        "agent_name": row_meta['agent_name'],
+        "agent_framework": row_meta['agent_framework'],
     }
+
     if row_meta.get('agent_organization'):
-        agent_details['agent_organization'] = row_meta['agent_organization']
+        additional_details['agent_organization'] = row_meta['agent_organization']
 
     if row_meta.get('agent_version'):
-        agent_details['agent_version'] = row_meta['agent_version']
+        additional_details['agent_version'] = row_meta['agent_version']
 
     return GenerationConfig(
-        generation_args=GenerationArgs(
-            agentic_eval_config=AgenticEvalConfig(
-                additional_details=agent_details,
-            ),
-        ),
-        additional_details={
-            'benchmark_name': 'CocoaBench',
-            'benchmark_version': benchmark_version,
-        },
+        additional_details=additional_details
     )
 
 
@@ -424,7 +417,7 @@ def make_accuracy_result(
             public_source_urls,
             benchmark_reference_urls,
         ),
-        evaluation_timestamp=evaluation_timestamp,
+        evaluation_result_timestamp=evaluation_timestamp,
         metric_config=MetricConfig(
             evaluation_description='Overall task success rate on CocoaBench aggregate release',
             metric_id='cocoabench.overall.accuracy_percent',
@@ -439,7 +432,8 @@ def make_accuracy_result(
             score=require_finite_number(
                 row['AccuracyPercent'], 'CocoaBench accuracy percent'
             ),
-            details=stringify_details(
+            uncertainty=Uncertainty(num_samples=answered) if answered else None,
+            additional_details=stringify_details(
                 {
                     'correct': parse_optional_int(row.get('Correct')),
                     'wrong': parse_optional_int(row.get('Wrong')),
@@ -448,7 +442,6 @@ def make_accuracy_result(
                     'agent_name': row_meta['agent_name'],
                 }
             ),
-            uncertainty=Uncertainty(num_samples=answered) if answered else None,
         ),
         generation_config=make_generation_config(
             row['Agent'], row_meta, benchmark_version
@@ -489,7 +482,7 @@ def make_optional_metric_result(
             public_source_urls,
             benchmark_reference_urls,
         ),
-        evaluation_timestamp=evaluation_timestamp,
+        evaluation_result_timestamp=evaluation_timestamp,
         metric_config=MetricConfig(
             evaluation_description=evaluation_description,
             metric_id=metric_id,
@@ -502,7 +495,7 @@ def make_optional_metric_result(
         ),
         score_details=ScoreDetails(
             score=score,
-            details=stringify_details(
+            additional_details=stringify_details(
                 {
                     'agent_label': row['Agent'],
                     'agent_name': row_meta['agent_name'],

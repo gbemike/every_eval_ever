@@ -34,13 +34,10 @@ from every_eval_ever.adapters.swe_helpers import (
     parse_model_from_dir,
 )
 from every_eval_ever.eval_types import (
-    AgenticEvalConfig,
-    AvailableTool,
     EvalLibrary,
     EvaluationLog,
     EvaluationResult,
     EvaluatorRelationship,
-    GenerationArgs,
     GenerationConfig,
     MetricConfig,
     ModelInfo,
@@ -139,6 +136,10 @@ def convert_submission(
     eval_name = f'{ds_display} ({lang})'
     dataset_label = f'{ds_display} ({lang})'
 
+    genconfig_details = {
+        'available_tools': json.dumps([{'name': 'bash'}]),
+    }
+
     eval_result = EvaluationResult(
         evaluation_name=eval_name,
         source_data=SourceDataHf(
@@ -148,7 +149,7 @@ def convert_submission(
             hf_split='test',
             samples_number=total_instances_for_lang,
         ),
-        evaluation_timestamp=evaluation_timestamp,
+        evaluation_result_timestamp=evaluation_timestamp,
         metric_config=MetricConfig(
             evaluation_description=f'Fraction of {lang} GitHub issues resolved (0.0–1.0)',
             lower_is_better=False,
@@ -158,14 +159,10 @@ def convert_submission(
         ),
         score_details=ScoreDetails(
             score=score,
-            details=score_details,
+            additional_details=score_details,
         ),
         generation_config=GenerationConfig(
-            generation_args=GenerationArgs(
-                agentic_eval_config=AgenticEvalConfig(
-                    available_tools=[AvailableTool(name='bash')],
-                ),
-            ),
+            additional_details=genconfig_details
         ),
     )
 

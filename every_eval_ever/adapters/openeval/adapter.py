@@ -947,7 +947,7 @@ def make_evaluation_result(
                 standard_deviation=stddev,
                 num_samples=len(values),
             ),
-            details=stringify_details(
+            additional_details=stringify_details(
                 {
                     'min_instance_score': min(values),
                     'max_instance_score': max(values),

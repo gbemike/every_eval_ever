@@ -353,7 +353,7 @@ def test_split_qualified_results_preserve_paired_performance() -> None:
 
     def results_by_split(model_id: str) -> dict[str, object]:
         return {
-            result.score_details.details['split_id']: result
+            result.score_details.additional_details['split_id']: result
             for result in by_model[model_id].evaluation_results
         }
 
@@ -379,7 +379,7 @@ def test_split_qualified_results_preserve_paired_performance() -> None:
     all_results = [result for log in logs for result in log.evaluation_results]
     assert len({result.evaluation_result_id for result in all_results}) == 7
     for result in all_results:
-        details = result.score_details.details
+        details = result.score_details.additional_details
         entry = entries_by_evaluation_id[details['pwc_evaluation_id']]
         qualification = entry.qualification
         assert result.evaluation_name == qualification.benchmark_id
@@ -542,8 +542,8 @@ def test_result_id_binds_protocol_semantics_for_the_same_source_cell() -> None:
     assert baseline.evaluation_result_id != changed.evaluation_result_id
     assert baseline.score_details.score == changed.score_details.score
     assert (
-        baseline.score_details.details['protocol_semantic_sha256']
-        != (changed.score_details.details['protocol_semantic_sha256'])
+        baseline.score_details.additional_details['protocol_semantic_sha256']
+        != (changed.score_details.additional_details['protocol_semantic_sha256'])
     )
 
 
@@ -633,16 +633,16 @@ def test_explicit_percent_scale_converts_without_distribution_inference() -> (
     score = log.evaluation_results[0]
     qualification = overlay.entries[0].qualification
     assert score.evaluation_name == qualification.benchmark_id
-    assert score.score_details.details['protocol_semantic_sha256'] == (
+    assert score.score_details.additional_details['protocol_semantic_sha256'] == (
         qualification.semantic_sha256()
     )
     assert score.score_details.score == pytest.approx(0.9949)
     assert score.metric_config.metric_id == 'auroc'
     assert score.metric_config.metric_unit == 'proportion'
-    assert score.score_details.details['raw_value'] == '99.49'
-    assert score.score_details.details['reviewed_source_scale'] == 'percent'
-    assert score.score_details.details['applied_scale_factor'] == '0.01'
-    assert score.score_details.details['generalization_regime'] == 'inductive'
+    assert score.score_details.additional_details['raw_value'] == '99.49'
+    assert score.score_details.additional_details['reviewed_source_scale'] == 'percent'
+    assert score.score_details.additional_details['applied_scale_factor'] == '0.01'
+    assert score.score_details.additional_details['generalization_regime'] == 'inductive'
     assert score.source_data.dataset_name == 'DrugBank'
     assert (
         'https://paperswithcode.com/dataset/drugbank'
@@ -668,7 +668,7 @@ def test_reported_uncertainty_lands_on_the_same_scale_as_the_score() -> None:
         _source_rows(metrics), _datasets(), _overlay(metrics), OVERLAY_SHA
     )
 
-    details = logs[0].evaluation_results[0].score_details.details
+    details = logs[0].evaluation_results[0].score_details.additional_details
     assert logs[0].evaluation_results[0].score_details.score == pytest.approx(
         0.9949
     )
@@ -690,7 +690,7 @@ def test_an_identity_scale_uncertainty_is_carried_through_unchanged() -> None:
         OVERLAY_SHA,
     )
 
-    details = logs[0].evaluation_results[0].score_details.details
+    details = logs[0].evaluation_results[0].score_details.additional_details
     assert details['reported_uncertainty'] == '0.0031'
     # Nothing was rescaled, so repeating the figure would only invite drift.
     assert 'reported_uncertainty_canonical' not in details
@@ -702,7 +702,7 @@ def test_a_cell_with_no_uncertainty_records_none() -> None:
         _source_rows(metrics), _datasets(), _overlay(metrics), OVERLAY_SHA
     )
 
-    details = logs[0].evaluation_results[0].score_details.details
+    details = logs[0].evaluation_results[0].score_details.additional_details
     assert 'reported_uncertainty' not in details
 
 
@@ -974,9 +974,9 @@ def test_source_model_aliases_consolidate_under_canonical_model_id() -> None:
         'Method Alpha v1',
     ]
     names_by_source_id = {
-        result.score_details.details[
+        result.score_details.additional_details[
             'pwc_evaluation_id'
-        ]: result.score_details.details['pwc_model_name']
+        ]: result.score_details.additional_details['pwc_model_name']
         for result in log.evaluation_results
     }
     assert names_by_source_id == {

@@ -147,13 +147,15 @@ def test_newer_versions_keep_effort_trials_and_distinct_ids(tmp_path: Path):
         'terminal-bench-4.0/16db8ad5-84aa-4588-b660-1ce68c0d45e2',
     ]
     assert [
-        log.model_info.additional_details['reasoning_effort'] for log in logs
+        log.evaluation_results[0]
+        .generation_config.generation_args.reasoning_effort
+        for log in logs
     ] == ['max', 'xhigh']
     result = logs[0].evaluation_results[0]
     assert result.metric_config.metric_id == 'terminal-bench-4.0.accuracy'
     assert result.score_details.score == 58.18
     assert result.score_details.uncertainty.num_samples == 330
-    assert result.score_details.details['successes'] == '192'
+    assert result.score_details.additional_details['successes'] == '192'
     # 4.0 publishes no task/trial split, so none is claimed
     command = result.generation_config.generation_args.execution_command
     assert ' -k ' not in command
@@ -166,6 +168,7 @@ def test_newer_versions_keep_effort_trials_and_distinct_ids(tmp_path: Path):
         'Pass@5',
     ]
     pass_at_2 = pass_results[0]
+    assert pass_at_2.evaluation_result_timestamp == logs[0].evaluation_timestamp
     assert pass_at_2.metric_config.metric_id == 'pass_at_k'
     assert pass_at_2.metric_config.metric_parameters == {'k': 2}
     assert pass_at_2.metric_config.max_score == 1

@@ -35,11 +35,8 @@ from every_eval_ever.converters.common.publication import (
     publish_evaluation_logs,
 )
 from every_eval_ever.eval_types import (
-    AgenticEvalConfig,
-    AvailableTool,
     DetailedEvaluationResults,
     EvalLibrary,
-    EvalLimits,
     EvaluationLog,
     EvaluationResult,
     EvaluatorRelationship,
@@ -408,7 +405,12 @@ def build_aggregate(
 
     model_config = first['model_config']
     max_tokens = model_config.get('max_output_tokens')
-    generation_details = {}
+    generation_details = {
+        'iteration_limit': str(iteration_limit),
+        'available_tools': json.dumps(
+            [{'name': 'bash', 'description': 'Kali Linux terminal'}]
+        ),
+    }
     if model_config.get('max_input_tokens'):
         generation_details['max_input_tokens'] = str(
             model_config['max_input_tokens']
@@ -419,15 +421,6 @@ def build_aggregate(
         generation_args=GenerationArgs(
             temperature=model_config.get('temperature'),
             max_tokens=max_tokens if max_tokens else None,
-            max_attempts=max(attempts.values()),
-            agentic_eval_config=AgenticEvalConfig(
-                available_tools=[
-                    AvailableTool(
-                        name='bash', description='Kali Linux terminal'
-                    ),
-                ]
-            ),
-            eval_limits=EvalLimits(message_limit=iteration_limit),
             sandbox=Sandbox(type='docker'),
         ),
         additional_details=generation_details or None,
@@ -441,7 +434,7 @@ def build_aggregate(
             source_type='url',
             url=[BOUNTYBENCH_GITHUB],
         ),
-        evaluation_timestamp=eval_unix,
+        evaluation_result_timestamp=eval_unix,
         metric_config=MetricConfig(
             evaluation_description=(
                 f'BountyBench {workflow}: share of bounties the agent '
@@ -459,13 +452,13 @@ def build_aggregate(
         ),
         score_details=ScoreDetails(
             score=success_rate,
-            details=score_breakdown,
             uncertainty=Uncertainty(
                 standard_error=StandardError(
                     value=standard_error, method='analytic'
                 ),
                 num_samples=n_total,
             ),
+            additional_details=score_breakdown,
         ),
         generation_config=generation_config,
     )

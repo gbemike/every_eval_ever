@@ -38,8 +38,6 @@ from every_eval_ever.eval_types import (
     EvaluationLog,
     EvaluationResult,
     EvaluatorRelationship,
-    JudgeConfig,
-    LlmScoring,
     MetricConfig,
     ModelInfo,
     ScoreDetails,
@@ -328,16 +326,25 @@ def make_metric_config(
         score_type=ScoreType.continuous,
         min_score=1.0,
         max_score=10.0,
-        llm_scoring=LlmScoring(
-            judges=[JudgeConfig(model_info=judge_model_info)],
-            input_prompt=JUDGE_PROMPT_DESCRIPTION,
-        ),
         # Note: judge model lives only in llm_scoring.judges[0].model_info
         # (schema L586). The prompt template identifiers below are the
         # verbatim FastChat template names ('single-v1', 'single-v1-multi-turn')
         # — not duplicated by any structured schema slot.
         additional_details={
             'aggregation': 'mean',
+            'llm_scoring': json.dumps(
+                {
+                    'judges': [
+                        {
+                            'model_info': judge_model_info.model_dump(
+                                mode='json'
+                            )
+                        }
+                    ],
+                    'input_prompt': JUDGE_PROMPT_DESCRIPTION,
+                },
+                sort_keys=True,
+            ),
             'judge_prompt_templates_json': json.dumps(
                 judge_prompt_templates, sort_keys=True
             ),
@@ -359,7 +366,7 @@ def make_score_details(values: list[float]) -> ScoreDetails:
             standard_deviation=sd,
             num_samples=len(values),
         ),
-        details={
+        additional_details={
             'min_judgment_score': str(min(values)),
             'max_judgment_score': str(max(values)),
             'judgment_count': str(len(values)),

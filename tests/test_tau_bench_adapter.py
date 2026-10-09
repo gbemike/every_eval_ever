@@ -251,7 +251,7 @@ def test_voice_interaction_metrics_are_emitted_with_units_and_direction():
     assert latency.metric_config.max_score == float('inf')
     assert latency.score_details.score == 1.23
     assert (
-        json.loads(latency.score_details.details['counts'])['n_simulations']
+        json.loads(latency.score_details.additional_details['counts'])['n_simulations']
         == 50
     )
     assert (

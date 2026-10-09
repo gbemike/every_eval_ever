@@ -69,12 +69,8 @@ from every_eval_ever.converters.inspect.utils import (
     parse_supplemental_eval_details,
 )
 from every_eval_ever.eval_types import (
-    AgenticEvalConfig,
-    AvailableTool,
     DetailedEvaluationResults,
     EvalLibrary,
-    EvalLimits,
-    EvalPlan,
     EvaluationLog,
     EvaluationResult,
     EvaluatorRelationship,
@@ -82,8 +78,6 @@ from every_eval_ever.eval_types import (
     GenerationArgs,
     GenerationConfig,
     HashAlgorithm,
-    JudgeConfig,
-    LlmScoring,
     MetricConfig,
     ModelInfo,
     Sandbox,
@@ -189,7 +183,7 @@ class InspectAIAdapter(BaseEvaluationAdapter):
         evaluation_task_name: str,
         scorer_name: str,
         metric_info: EvalMetric,
-        llm_grader: LlmScoring,
+        llm_grader: dict[str, Any] | None,
         source_data: SourceDataHf,
         evaluation_timestamp: str,
         generation_config: GenerationConfig,
@@ -199,24 +193,33 @@ class InspectAIAdapter(BaseEvaluationAdapter):
         stddev_value: float | None = None,
         num_samples: int | None = None,
     ) -> EvaluationResult:
+        metric_fields = metric_config_fields(
+            metric_info.name, harness=INSPECT_HARNESS_ID
+        )
+        metric_additional_details = metric_fields.get('additional_details') or {}
+        if llm_grader is not None:
+            metric_additional_details['llm_scoring'] = json.dumps(
+                llm_grader, sort_keys=True
+            )
+               
+        if metric_additional_details:
+            metric_fields['additional_details'] = metric_additional_details
+
         return EvaluationResult(
             evaluation_result_id=evaluation_result_id(
                 scorer_name, metric_info.name
             ),
             evaluation_name=evaluation_task_name,
             source_data=source_data,
-            evaluation_timestamp=evaluation_timestamp,
+            evaluation_result_timestamp=evaluation_timestamp,
             metric_config=MetricConfig(
                 evaluation_description=f'{metric_info.name} from scorer {scorer_name}',
                 metric_name=metric_info.name,
-                llm_scoring=llm_grader,
-                **metric_config_fields(
-                    metric_info.name, harness=INSPECT_HARNESS_ID
-                ),
+                **metric_fields,
             ),
             score_details=ScoreDetails(
                 score=metric_info.value,
-                details=stderr_extra or None,
+                additional_details=stderr_extra or None,
                 uncertainty=self._extract_uncertainty(
                     stderr_value, stderr_method, stddev_value, num_samples
                 ),
@@ -245,20 +248,23 @@ class InspectAIAdapter(BaseEvaluationAdapter):
         for scorer in scores:
             llm_grader = None
             if scorer.params and scorer.params.get('grader_model'):
-                llm_grader = LlmScoring(
-                    judges=[
-                        JudgeConfig(
-                            model_info=extract_model_info_from_model_path(
-                                self._safe_get(
-                                    scorer.params.get('grader_model'), 'model'
-                                )
+                judge_model_info = extract_model_info_from_model_path(
+                    self._safe_get(
+                        scorer.params.get('grader_model'), 'model'
+                    )
+                )
+                llm_grader = {
+                    'judges': [
+                        {
+                            'model_info': judge_model_info.model_dump(
+                                mode='json', exclude_none=True
                             )
-                        )
+                        }
                     ],
-                    input_prompt=self._safe_get(
+                    'input_prompt': self._safe_get(
                         scorer.params, 'grader_template'
                     ),
-                )
+                }
 
             # A scorer can report the analytic stderr and a bootstrap resample
             # of the same score. Prefer the analytic standard error of the mean;
@@ -445,7 +451,7 @@ class InspectAIAdapter(BaseEvaluationAdapter):
 
     def _extract_available_tools(
         self, eval_plan: InspectEvalPlan
-    ) -> List[AvailableTool]:
+    ) -> List:
         """Extracts and flattens tools from the evaluation plan steps."""
 
         tools_in_plan_steps = [
@@ -455,16 +461,16 @@ class InspectAIAdapter(BaseEvaluationAdapter):
         ]
 
         return [
-            AvailableTool(
-                name=self._safe_get(tool, 'name'),
-                description=self._safe_get(tool, 'description'),
-                parameters=(
-                    {str(k): json.dumps(v) for k, v in raw_params.items()}
+            {
+                "name":self._safe_get(tool, 'name'),
+                "description":self._safe_get(tool, 'description'),
+                "parameters":(
+                    raw_params
                     if (raw_params := self._safe_get(tool, 'params'))
                     and isinstance(raw_params, dict)
                     else None
                 ),
-            )
+            }
             for tool_list in tools_in_plan_steps
             if isinstance(tool_list, list) and tool_list
             for tool in tool_list[0]
@@ -486,47 +492,55 @@ class InspectAIAdapter(BaseEvaluationAdapter):
             for gen_config, value in vars(eval_config).items()
             if value is not None
         }
+
         eval_sandbox = spec.task_args.get('sandbox', None)
         if eval_sandbox and not isinstance(eval_sandbox, list):
             eval_sandbox = [eval_sandbox]
         sandbox_type, sandbox_config = ((eval_sandbox or []) + [None, None])[:2]
 
-        eval_plan = EvalPlan(
-            name=inspect_plan.name,
-            steps=[
-                json.dumps(
-                    step.model_dump()
-                    if hasattr(step, 'model_dump')
-                    else vars(step)
-                )
-                for step in inspect_plan.steps
-            ],
-            config={
-                str(k): json.dumps(v)
-                for k, v in inspect_plan.config.model_dump().items()
-                if v is not None
-            },
-        )
-
-        eval_limits = EvalLimits(
-            time_limit=spec.config.time_limit,
-            message_limit=spec.config.message_limit,
-            token_limit=spec.config.token_limit,
-        )
-
         max_attempts = (
             spec.task_args.get('max_attempts') or eval_config.max_retries
         )  # TODO not sure if max_attempts == max_retries in this case
-
+        
         reasoning = (
             True
             if eval_config.reasoning_effort
             and eval_config.reasoning_effort.lower() != 'none'
             else False
         )
-
-        available_tools: List[AvailableTool] = self._extract_available_tools(
+        available_tools: List = self._extract_available_tools(
             inspect_plan
+        )
+
+        eval_generation_config.update(
+            {
+                'available_tools': json.dumps(available_tools),
+                'eval_plan': json.dumps(
+                    {
+                        'name': inspect_plan.name,
+                        'steps': [
+                            json.dumps(
+                                step.model_dump()
+                                if hasattr(step, 'model_dump')
+                                else vars(step)
+                            )
+                            for step in inspect_plan.steps
+                        ],
+                        'config': {
+                            str(key): json.dumps(value)
+                            for key, value in inspect_plan.config.model_dump().items()
+                            if value is not None
+                        },
+                    }
+                ),
+                'eval_limits': json.dumps(
+                    {
+                        'time_limit': spec.config.time_limit,
+                        'message_limit': spec.config.message_limit,
+                        'token_limit': spec.config.token_limit,
+                    }
+                ),
+            }
         )
 
         generation_args = GenerationArgs(
@@ -536,13 +550,8 @@ class InspectAIAdapter(BaseEvaluationAdapter):
             max_tokens=eval_config.max_tokens,
             reasoning=reasoning,
             prompt_template=self._extract_prompt_template(inspect_plan),
-            agentic_eval_config=AgenticEvalConfig(
-                available_tools=available_tools
-            ),
-            eval_plan=eval_plan,
-            eval_limits=eval_limits,
             sandbox=Sandbox(type=sandbox_type, config=sandbox_config),
-            max_attempts=max_attempts,
+            max_attempts=max_attempts
         )
 
         additional_details = eval_generation_config

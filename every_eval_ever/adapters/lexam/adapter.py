@@ -39,8 +39,6 @@ from every_eval_ever.eval_types import (
     GenerationArgs,
     GenerationConfig,
     InferenceEngine,
-    JudgeConfig,
-    LlmScoring,
     MetricConfig,
     ModelInfo,
     ScoreDetails,
@@ -852,49 +850,42 @@ def _judge_model_info(
     )
 
 
-def _open_question_judge_scoring() -> LlmScoring:
-    return LlmScoring(
-        judges=[
-            JudgeConfig(
-                model_info=_judge_model_info(
-                    'gpt-4o',
-                    JUDGE_MODEL_IDS[0],
-                    'closed_weights',
-                    'externally_managed',
+def _open_question_judge_scoring() -> str:
+    judges = [
+        _judge_model_info(
+            'gpt-4o', JUDGE_MODEL_IDS[0], 'closed_weights', 'externally_managed'
+        ),
+        _judge_model_info(
+            'DeepSeek-V3', JUDGE_MODEL_IDS[1], 'open_weights', 'unknown'
+        ),
+        _judge_model_info(
+            'Qwen3-32B', JUDGE_MODEL_IDS[2], 'open_weights', 'unknown'
+        ),
+    ]
+    return json.dumps(
+        {
+            'judges': [
+                {'model_info': judge.model_dump(mode='json')}
+                for judge in judges
+            ],
+            'input_prompt': JUDGE_USER_PROMPT_TEMPLATE,
+            'aggregation_method': None,
+            'additional_details': {
+                'judge_system_prompt': JUDGE_SYSTEM_PROMPT,
+                'judge_prompt_version': '20250324',
+                'aggregation': JUDGE_AGGREGATION,
+                'aggregation_note': (
+                    'Pointwise minimum of the three judge scores per question, '
+                    'then averaged over questions. The schema '
+                    'AggregationMethod enum has no minimum option, so no typed '
+                    'value is set.'
                 ),
-            ),
-            JudgeConfig(
-                model_info=_judge_model_info(
-                    'DeepSeek-V3',
-                    JUDGE_MODEL_IDS[1],
-                    'open_weights',
-                    'unknown',
-                ),
-            ),
-            JudgeConfig(
-                model_info=_judge_model_info(
-                    'Qwen3-32B',
-                    JUDGE_MODEL_IDS[2],
-                    'open_weights',
-                    'unknown',
-                ),
-            ),
-        ],
-        input_prompt=JUDGE_USER_PROMPT_TEMPLATE,
-        additional_details={
-            'judge_system_prompt': JUDGE_SYSTEM_PROMPT,
-            'judge_prompt_version': '20250324',
-            'aggregation': JUDGE_AGGREGATION,
-            'aggregation_note': (
-                'Pointwise minimum of the three judge scores per question, '
-                'then averaged over questions. The schema '
-                'AggregationMethod enum has no minimum option, so no typed '
-                'value is set.'
-            ),
-            'validation': 'human expert validated',
-            'source': f'{GITHUB_REPO_URL}/blob/main/customized_judge_async.py',
-            'citation': PAPER_URL,
+                'validation': 'human expert validated',
+                'source': f'{GITHUB_REPO_URL}/blob/main/customized_judge_async.py',
+                'citation': PAPER_URL,
+            },
         },
+        sort_keys=True,
     )
 
 
@@ -928,7 +919,7 @@ def _score_details(
         return ScoreDetails(
             score=canonical,
             uncertainty=Uncertainty(num_samples=samples),
-            details=details,
+            additional_details=details,
         )
     return ScoreDetails(
         score=canonical,
@@ -939,7 +930,10 @@ def _score_details(
             ),
             num_samples=samples,
         ),
-        details={**details, 'standard_error_source': PAPER_TABLE_CITATION},
+        additional_details={
+            **details,
+            'standard_error_source': PAPER_TABLE_CITATION,
+        },
     )
 
 
@@ -963,8 +957,10 @@ def _build_open_question_result(
             score_type=ScoreType.continuous,
             min_score=OPEN_QUESTION_METRIC.canonical_min,
             max_score=OPEN_QUESTION_METRIC.canonical_max,
-            llm_scoring=_open_question_judge_scoring(),
-            additional_details=_metric_details(OPEN_QUESTION_METRIC),
+            additional_details={
+                **_metric_details(OPEN_QUESTION_METRIC),
+                'llm_scoring': _open_question_judge_scoring(),
+            },
         ),
         score_details=_score_details(
             score, label, 'open', OPEN_QUESTION_METRIC

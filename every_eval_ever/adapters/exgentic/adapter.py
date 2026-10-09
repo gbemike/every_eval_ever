@@ -29,7 +29,6 @@ import time
 from pathlib import Path
 
 from every_eval_ever.eval_types import (
-    AgenticEvalConfig,
     EvalLibrary,
     EvaluationLog,
     EvaluationResult,
@@ -164,7 +163,7 @@ def convert_result(result: dict, retrieved_timestamp: str) -> EvaluationLog:
             source_type='url',
             url=['https://github.com/Exgentic/exgentic'],
         ),
-        evaluation_timestamp=retrieved_timestamp,
+        evaluation_result_timestamp=retrieved_timestamp,
         metric_config=MetricConfig(
             evaluation_description=f'{benchmark} benchmark evaluation'
             + (f' ({subset} subset)' if subset else ''),
@@ -176,17 +175,13 @@ def convert_result(result: dict, retrieved_timestamp: str) -> EvaluationLog:
         score_details=ScoreDetails(
             score=round(float(score), 4) if score is not None else 0.0,
             uncertainty=uncertainty,
-            details=details if details else None,
+            additional_details=details if details else None,
         ),
         generation_config=GenerationConfig(
-            generation_args=GenerationArgs(
-                agentic_eval_config=AgenticEvalConfig(
-                    additional_details={
-                        'agent_name': agent_name,
-                        'agent_framework': agent_framework,
-                    },
-                ),
-            ),
+            additional_details={
+                'agent_name': agent_name,
+                'agent_framework': agent_framework,
+            },
         ),
     )
 
