@@ -6,7 +6,18 @@ from __future__ import annotations
 from enum import Enum
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Discriminator, Field, confloat, conint, constr, field_serializer, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Discriminator,
+    Field,
+    confloat,
+    conint,
+    constr,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 
 
 class SourceType(Enum):

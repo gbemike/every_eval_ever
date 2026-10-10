@@ -33,7 +33,6 @@ from every_eval_ever.eval_types import (
     EvaluationLog,
     EvaluationResult,
     EvaluatorRelationship,
-    GenerationArgs,
     GenerationConfig,
     MetricConfig,
     ModelInfo,
